@@ -1,0 +1,115 @@
+.codeViewer {
+  display: flex;
+  max-width: 100%;
+  min-height: 100%;
+  font-size: 14px;
+}
+
+.lineNumbers {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-width: calc(var(--line-digits, 1) * 1ch + 1.5rem);
+  border-right: 1px solid #e1e4e8;
+  background-color: #f9fafb;
+  text-align: right;
+  user-select: none;
+  position: relative;
+}
+
+:global(.dark) .lineNumbers {
+  border-right-color: #2a2a2a;
+  background-color: #131313;
+}
+
+.lineNumber {
+  display: block;
+  padding: 0 0.75rem;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  font-size: 0.875rem;
+  line-height: 24px;
+  color: #8c959f;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    color 0.1s ease,
+    background-color 0.1s ease;
+}
+
+.lineNumber:hover {
+  color: #57606a;
+  background-color: #f3f4f6;
+}
+
+:global(.dark) .lineNumber {
+  color: #919191;
+}
+
+:global(.dark) .lineNumber:hover {
+  color: #d1d5db;
+  background-color: #1a1a1a;
+}
+
+.codeContent {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.codeLines {
+  min-width: 100%;
+  width: fit-content;
+}
+
+.codeLines :global(.shiki span) {
+  background: transparent !important;
+}
+
+.codeLines :global(pre) {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow: visible;
+}
+
+.codeLines :global(code) {
+  display: block;
+  padding: 0 1rem;
+  background: transparent !important;
+}
+
+.codeLines :global(.line) {
+  display: block;
+  line-height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  white-space: pre;
+  overflow: hidden;
+  transition: background-color 0.1s ease;
+}
+
+.codeLines :global(.line.highlighted) {
+  margin: 0 -1rem;
+  padding: 0 1rem;
+  background-color: rgb(234 179 8 / 0.2);
+}
+
+.skeletonLineNumberRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 0.75rem;
+}
+
+.skeletonCodeLine {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 1rem;
+}
