@@ -11,8 +11,8 @@ CREATE TABLE "account" (
 	"refresh_token_expires_at" timestamp with time zone,
 	"scope" text,
 	"password" text,
-	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "device_code" (
@@ -26,15 +26,17 @@ CREATE TABLE "device_code" (
 	"polling_interval" integer,
 	"client_id" text,
 	"scope" text,
-	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "devices" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
 	"name" varchar(64) NOT NULL,
+	"visibility" "visibility" DEFAULT 'private' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "devices_user_name_unique" UNIQUE("user_id","name")
 );
 --> statement-breakpoint
@@ -48,6 +50,13 @@ CREATE TABLE "islet_revisions" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "islet_stars" (
+	"user_id" text NOT NULL,
+	"islet_id" uuid NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "islet_stars_user_islet_unique" UNIQUE("user_id","islet_id")
+);
+--> statement-breakpoint
 CREATE TABLE "islets" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"device_id" uuid NOT NULL,
@@ -59,12 +68,19 @@ CREATE TABLE "islets" (
 	CONSTRAINT "islets_device_path_unique" UNIQUE("device_id","path")
 );
 --> statement-breakpoint
+CREATE TABLE "rate_limits" (
+	"key" text PRIMARY KEY NOT NULL,
+	"count" integer NOT NULL,
+	"reset_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"token" text NOT NULL,
-	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"ip_address" text,
 	"user_agent" text,
 	"user_id" text NOT NULL,
@@ -77,8 +93,8 @@ CREATE TABLE "user" (
 	"email" text NOT NULL,
 	"email_verified" boolean NOT NULL,
 	"image" text,
-	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"username" varchar(40),
 	"display_username" varchar(40),
 	CONSTRAINT "user_email_unique" UNIQUE("email"),
@@ -98,6 +114,9 @@ ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("
 ALTER TABLE "device_code" ADD CONSTRAINT "device_code_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "islet_revisions" ADD CONSTRAINT "islet_revisions_islet_id_islets_id_fk" FOREIGN KEY ("islet_id") REFERENCES "public"."islets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "islet_stars" ADD CONSTRAINT "islet_stars_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "islet_stars" ADD CONSTRAINT "islet_stars_islet_id_islets_id_fk" FOREIGN KEY ("islet_id") REFERENCES "public"."islets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "islets" ADD CONSTRAINT "islets_device_id_devices_id_fk" FOREIGN KEY ("device_id") REFERENCES "public"."devices"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "islet_revisions_islet_id_created_idx" ON "islet_revisions" USING btree ("islet_id","created_at");
+CREATE INDEX "islet_revisions_islet_id_created_idx" ON "islet_revisions" USING btree ("islet_id","created_at");--> statement-breakpoint
+CREATE INDEX "islet_stars_islet_id_idx" ON "islet_stars" USING btree ("islet_id");
