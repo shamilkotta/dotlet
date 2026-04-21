@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { main } from "./main.js";
 
 export { CONFIG_PATH, DEFAULT_CONFIG, decodeCliConfig } from "./config.js";

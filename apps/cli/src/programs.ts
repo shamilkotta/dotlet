@@ -366,11 +366,11 @@ export function runDeviceList(options: { username?: string }) {
       `Fetched ${payload.devices.length} device${payload.devices.length === 1 ? "" : "s"}`,
     );
     yield* terminal.log();
-    const defaultDeviceLower = config.device.toLowerCase();
+    const defaultDeviceLower = config.device?.toLowerCase();
     const nameColWidth = Math.max(...payload.devices.map((d) => d.name.length), 4);
 
     for (const device of payload.devices) {
-      const isDefault = device.name.toLowerCase() === defaultDeviceLower;
+      const isDefault = defaultDeviceLower && device.name.toLowerCase() === defaultDeviceLower;
       const radio = isDefault ? chalk.green(figures.radioOn) : chalk.gray(figures.radioOff);
       const namePadded = device.name.padEnd(nameColWidth);
       yield* terminal.log(`  ${radio}  ${namePadded}  ${visibilityBadge(device.visibility)}`);

@@ -6,11 +6,13 @@ import { CliConfigError } from "./errors.js";
 
 export const CONFIG_PATH = resolve(homedir(), ".config", "dotlet", "config.json");
 
+export const DEFAULT_API_BASE_URL = process.env.DOTLET_BASE_URL ?? "http://localhost:3000";
+
 const UrlSchema = Schema.String.pipe(Schema.pattern(/^https?:\/\/\S+$/));
 
 export const CliConfigSchema = Schema.Struct({
   apiBaseUrl: UrlSchema,
-  device: Schema.String,
+  device: Schema.optional(Schema.String),
   accessToken: Schema.optional(Schema.String),
   username: Schema.optional(Schema.String),
 });
@@ -20,8 +22,7 @@ const PartialCliConfigSchema = Schema.partial(CliConfigSchema);
 export type CliConfig = Schema.Schema.Type<typeof CliConfigSchema>;
 
 export const DEFAULT_CONFIG: CliConfig = {
-  apiBaseUrl: "http://localhost:3000",
-  device: "personal",
+  apiBaseUrl: DEFAULT_API_BASE_URL,
 };
 
 export function decodeCliConfig(input: unknown): Effect.Effect<CliConfig, CliConfigError> {

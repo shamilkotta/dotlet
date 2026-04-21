@@ -1,20 +1,50 @@
 {
   "name": "dotlet",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.1",
+  "description": "CLI for syncing and versioning dotfiles with devices",
+  "keywords": [
+    "dotfiles",
+    "cli",
+    "sync",
+    "config",
+    "developer-tools"
+  ],
+  "homepage": "https://dotlet.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shamilkotta/dotlet.git",
+    "directory": "apps/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/shamilkotta/dotlet/issues"
+  },
+  "author": "Shamil",
+  "license": "UNLICENSED",
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
   "bin": {
     "dotlet": "./dist/index.js",
     "dot": "./dist/index.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --out-dir dist --clean",
-    "dev": "tsx src/index.ts",
+    "build": "tsup src/index.ts --format esm --dts --out-dir dist --clean --env.DOTLET_BASE_URL https://dotlet.app",
+    "dev": "tsup src/index.ts --format esm --dts --out-dir dist --clean --watch --env.DOTLET_BASE_URL http://localhost:3000",
     "lint": "oxlint src",
     "format": "oxfmt --write src",
     "format:check": "oxfmt --check src",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "pnpm build"
   },
   "dependencies": {
     "@effect/cli": "0.75.0",
