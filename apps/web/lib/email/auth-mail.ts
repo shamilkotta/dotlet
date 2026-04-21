@@ -1,4 +1,5 @@
 import { sendTransactionalEmail } from ".";
+import { waitUntil } from "@vercel/functions";
 
 function escapeHtml(text: string): string {
   return text
@@ -10,9 +11,11 @@ function escapeHtml(text: string): string {
 }
 
 export function queueAuthEmail(send: () => Promise<void>): void {
-  void send().catch((err: unknown) => {
-    console.error("[auth] transactional email failed:", err);
-  });
+  waitUntil(
+    send().catch((err: unknown) => {
+      console.error("[auth] transactional email failed:", err);
+    }),
+  );
 }
 
 type EmailShellParams = {
