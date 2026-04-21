@@ -27,7 +27,7 @@ export default function Home() {
           <header className="mb-12 flex items-center justify-between gap-4 border-b border-border pb-6">
             <div className="space-y-1">
               <div className="text-sm font-bold uppercase tracking-widest">DOTLET</div>
-              <div className="text-xs text-muted-foreground">v0.1.0</div>
+              <div className="text-xs text-muted-foreground">v0.1.0 (ALPHA)</div>
             </div>
             <Suspense fallback={null}>
               <AuthHeader />

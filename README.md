@@ -22,5 +22,5 @@ Create `apps/web/.env.local` from `apps/web/.env.example`.
 For CLI, default API URL is `http://localhost:3000` and can be overridden with:
 
 ```bash
-dotlet login --api http://localhost:3000
+dotlet login
 ```

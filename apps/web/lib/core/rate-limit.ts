@@ -2,18 +2,16 @@ import { sql } from "drizzle-orm";
 import { db } from "../db/client";
 
 export function decideRateLimit(
-  existing: { count: number; resetAt: Date } | null,
+  existing: { count: number; lastRequest: number } | null,
   max: number,
   windowMs: number,
-  now = new Date(),
+  nowMs = Date.now(),
 ) {
-  const nextResetAt = new Date(now.getTime() + windowMs);
-
-  if (!existing || existing.resetAt <= now) {
+  if (!existing || nowMs - existing.lastRequest > windowMs) {
     return {
       allowed: true,
       count: 1,
-      resetAt: nextResetAt,
+      lastRequest: nowMs,
     };
   }
 
@@ -21,26 +19,25 @@ export function decideRateLimit(
     return {
       allowed: false,
       count: existing.count,
-      resetAt: existing.resetAt,
+      lastRequest: existing.lastRequest,
     };
   }
 
   return {
     allowed: true,
     count: existing.count + 1,
-    resetAt: existing.resetAt,
+    lastRequest: nowMs,
   };
 }
 
 export async function checkRateLimit(key: string, max: number, windowMs: number): Promise<boolean> {
-  const now = new Date();
-  const initialResetAt = new Date(now.getTime() + windowMs);
+  const nowMs = Date.now();
 
   return db.transaction(async (tx) => {
     const inserted = await tx.execute<{ key: string }>(
       sql`
-        INSERT INTO "rate_limits" ("key", "count", "reset_at", "updated_at")
-        VALUES (${key}, 1, ${initialResetAt}, ${now})
+        INSERT INTO "rate_limits" ("key", "count", "last_request")
+        VALUES (${key}, 1, ${nowMs})
         ON CONFLICT ("key") DO NOTHING
         RETURNING "key"
       `,
@@ -50,35 +47,32 @@ export async function checkRateLimit(key: string, max: number, windowMs: number)
       return true;
     }
 
-    const result = await tx.execute<{ count: number; reset_at: Date | string }>(
-      sql`SELECT "count", "reset_at" FROM "rate_limits" WHERE "key" = ${key} FOR UPDATE`,
+    const result = await tx.execute<{ count: number; last_request: string | number }>(
+      sql`SELECT "count", "last_request" FROM "rate_limits" WHERE "key" = ${key} FOR UPDATE`,
     );
 
     const existingRow = result.rows[0];
+    const lastRequest = existingRow ? Number(existingRow.last_request) : nowMs;
     const decision = decideRateLimit(
       existingRow
         ? {
             count: Number(existingRow.count),
-            resetAt:
-              existingRow.reset_at instanceof Date
-                ? existingRow.reset_at
-                : new Date(existingRow.reset_at),
+            lastRequest,
           }
         : null,
       max,
       windowMs,
-      now,
+      nowMs,
     );
 
     await tx.execute(
       sql`
-        INSERT INTO "rate_limits" ("key", "count", "reset_at", "updated_at")
-        VALUES (${key}, ${decision.count}, ${decision.resetAt}, ${now})
+        INSERT INTO "rate_limits" ("key", "count", "last_request")
+        VALUES (${key}, ${decision.count}, ${decision.lastRequest})
         ON CONFLICT ("key") DO UPDATE
         SET
           "count" = EXCLUDED."count",
-          "reset_at" = EXCLUDED."reset_at",
-          "updated_at" = EXCLUDED."updated_at"
+          "last_request" = EXCLUDED."last_request"
       `,
     );
 

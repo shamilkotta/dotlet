@@ -30,7 +30,7 @@ import { IsletStarButton, IsletStarButtonPlaceholder } from "@/components/device
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ n?: string }>;
+  searchParams: Promise<{ n?: string; v?: string }>;
 }): Promise<Metadata> {
   const { n: name } = await searchParams;
   const { fileName: displayName } = splitDirAndFile(name ?? "");

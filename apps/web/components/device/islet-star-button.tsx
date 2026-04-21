@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Star } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@workspace/ui/components/sonner";
 
 import { starIslet, unstarIslet } from "@/lib/actions/islet-star";
 import { Skeleton } from "@workspace/ui/components/skeleton";
