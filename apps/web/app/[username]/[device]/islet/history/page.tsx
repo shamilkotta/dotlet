@@ -6,7 +6,6 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { FolderOpen } from "lucide-react";
 
-import { LandingFooter } from "@/components/landing-footer";
 import { buildIsletViewHref } from "@/lib/core/islet-link";
 import { splitDirAndFile } from "@/lib/core/path";
 import { auth } from "@/lib/auth";
@@ -101,7 +100,7 @@ export default async function IsletHistoryPage({
 
   return (
     <>
-      <header className="sticky top-0 z-50 mx-auto flex h-14 w-full max-w-[1600px] items-center border-b border-[#e1e4e8] px-4 dark:border-[#2a2a2a] md:px-8">
+      <header className="sticky top-0 z-50 mx-auto flex h-14 w-full max-w-[1600px] items-center border-b border-[#e1e4e8] px-4 dark:border-[#2a2a2a] bg-white dark:bg-[#0a0a0a] md:px-8">
         <div className="flex flex-1 items-center gap-4">
           <div className="flex min-w-0 items-center gap-2 font-mono text-sm tracking-tight">
             <Link
@@ -156,8 +155,6 @@ export default async function IsletHistoryPage({
           <IsletHistory isletRow={isletRow} target={target} />
         </Suspense>
       </main>
-
-      <LandingFooter className="mx-auto max-w-[1600px] px-4 md:px-8" />
     </>
   );
 }

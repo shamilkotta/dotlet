@@ -5,7 +5,6 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { LandingFooter } from "@/components/landing-footer";
 import { AuthHeader } from "@/components/auth-header";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
@@ -68,7 +67,7 @@ export default async function DevicePage({
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-14 items-center border-b border-[#e1e4e8] px-4 dark:border-[#2a2a2a]  md:px-8 w-full max-w-[1600px] mx-auto">
+      <header className="sticky top-0 z-50 flex h-14 items-center border-b border-[#e1e4e8] px-4 dark:border-[#2a2a2a] bg-white dark:bg-[#0a0a0a] md:px-8 w-full max-w-[1600px] mx-auto">
         <div className="flex flex-1 items-center gap-4">
           <div className="flex items-center gap-2 font-mono text-sm tracking-tight">
             <Link
@@ -119,8 +118,6 @@ export default async function DevicePage({
           <IsletsList target={target} canViewPrivate={canViewPrivate} />
         </Suspense>
       </main>
-
-      <LandingFooter className="mx-auto max-w-[1600px] px-4 md:px-8" />
     </>
   );
 }

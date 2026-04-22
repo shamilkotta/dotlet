@@ -2,15 +2,10 @@
   "version": "8",
   "dialect": "postgres",
   "id": "1b49017e-66ac-4102-9df1-46d2b0f4a705",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
-      "values": [
-        "public",
-        "private"
-      ],
+      "values": ["public", "private"],
       "name": "visibility",
       "entityType": "enums",
       "schema": "public"
@@ -1177,14 +1172,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "account_user_id_user_id_fkey",
@@ -1194,14 +1185,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "device_code_user_id_user_id_fkey",
@@ -1211,14 +1198,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "devices_user_id_user_id_fkey",
@@ -1228,14 +1211,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "islet_id"
-      ],
+      "columns": ["islet_id"],
       "schemaTo": "public",
       "tableTo": "islets",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "islet_revisions_islet_id_islets_id_fkey",
@@ -1245,14 +1224,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "islet_stars_user_id_user_id_fkey",
@@ -1262,14 +1237,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "islet_id"
-      ],
+      "columns": ["islet_id"],
       "schemaTo": "public",
       "tableTo": "islets",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "islet_stars_islet_id_islets_id_fkey",
@@ -1279,14 +1250,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "device_id"
-      ],
+      "columns": ["device_id"],
       "schemaTo": "public",
       "tableTo": "devices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "islets_device_id_devices_id_fkey",
@@ -1296,14 +1263,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "session_user_id_user_id_fkey",
@@ -1312,9 +1275,7 @@
       "table": "session"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "account_pkey",
       "schema": "public",
@@ -1322,9 +1283,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "device_code_pkey",
       "schema": "public",
@@ -1332,9 +1291,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "devices_pkey",
       "schema": "public",
@@ -1342,9 +1299,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "islet_revisions_pkey",
       "schema": "public",
@@ -1352,9 +1307,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "islet_stars_pkey",
       "schema": "public",
@@ -1362,9 +1315,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "islets_pkey",
       "schema": "public",
@@ -1372,9 +1323,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "rate_limit_pkey",
       "schema": "public",
@@ -1382,9 +1331,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "session_pkey",
       "schema": "public",
@@ -1392,9 +1339,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "user_pkey",
       "schema": "public",
@@ -1402,9 +1347,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "verification_pkey",
       "schema": "public",
@@ -1413,10 +1356,7 @@
     },
     {
       "nameExplicit": true,
-      "columns": [
-        "user_id",
-        "name"
-      ],
+      "columns": ["user_id", "name"],
       "nullsNotDistinct": false,
       "name": "devices_user_name_unique",
       "entityType": "uniques",
@@ -1425,10 +1365,7 @@
     },
     {
       "nameExplicit": true,
-      "columns": [
-        "user_id",
-        "islet_id"
-      ],
+      "columns": ["user_id", "islet_id"],
       "nullsNotDistinct": false,
       "name": "islet_stars_user_islet_unique",
       "entityType": "uniques",
@@ -1437,10 +1374,7 @@
     },
     {
       "nameExplicit": true,
-      "columns": [
-        "device_id",
-        "path"
-      ],
+      "columns": ["device_id", "path"],
       "nullsNotDistinct": false,
       "name": "islets_device_path_unique",
       "entityType": "uniques",
@@ -1449,9 +1383,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "key"
-      ],
+      "columns": ["key"],
       "nullsNotDistinct": false,
       "name": "rate_limit_key_key",
       "schema": "public",
@@ -1460,9 +1392,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "token"
-      ],
+      "columns": ["token"],
       "nullsNotDistinct": false,
       "name": "session_token_key",
       "schema": "public",
@@ -1471,9 +1401,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "email"
-      ],
+      "columns": ["email"],
       "nullsNotDistinct": false,
       "name": "user_email_key",
       "schema": "public",
@@ -1482,9 +1410,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "username"
-      ],
+      "columns": ["username"],
       "nullsNotDistinct": false,
       "name": "user_username_key",
       "schema": "public",

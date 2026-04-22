@@ -19,7 +19,6 @@ import {
   IsletInfoSkeleton,
 } from "@/components/device/islet-code-viewer";
 import { IsletFileToolbar, IsletFileToolbarSkeleton } from "@/components/device/islet-file-toolbar";
-import { LandingFooter } from "@/components/landing-footer";
 import { AuthHeader } from "@/components/auth-header";
 import { buildIsletHistoryHref, buildIsletViewHref } from "@/lib/core/islet-link";
 import { splitDirAndFile } from "@/lib/core/path";
@@ -172,7 +171,7 @@ export default async function IsletPage({
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-14 items-center border-b border-[#e1e4e8] px-4 dark:border-[#2a2a2a]  md:px-8 w-full max-w-[1600px] mx-auto">
+      <header className="sticky top-0 z-50 flex h-14 items-center border-b border-[#e1e4e8] px-4 dark:border-[#2a2a2a] bg-white dark:bg-[#0a0a0a] md:px-8 w-full max-w-[1600px] mx-auto">
         <div className="flex flex-1 items-center gap-4">
           <div className="flex items-center gap-2 font-mono text-sm tracking-tight">
             <Link
@@ -258,8 +257,6 @@ export default async function IsletPage({
           </Suspense>
         </section>
       </main>
-
-      <LandingFooter className="mx-auto max-w-[1600px] px-4 md:px-8" />
     </>
   );
 }

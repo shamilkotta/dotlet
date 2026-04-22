@@ -6,7 +6,6 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 
-import { LandingFooter } from "@/components/landing-footer";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { user } from "@/lib/db/schema";
@@ -69,8 +68,8 @@ export default async function UserHomePage({ params }: { params: Promise<{ usern
         <AuthHeader session={session} />
       </header>
 
-      <div className={`min-h-[calc(100vh-3.5rem)] flex flex-col`}>
-        <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col p-4 md:p-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-8">
+        <div className="">
           <div className="mb-12">
             <div className="flex flex-col items-start gap-5 border-b border-[#e1e4e8]  p-6 md:flex-row dark:border-[#2a2a2a] ">
               {profile.image ? (
@@ -111,9 +110,7 @@ export default async function UserHomePage({ params }: { params: Promise<{ usern
             <DevicesList isOwner={isOwner} profile={profile} />
           </Suspense>
         </div>
-      </div>
-
-      <LandingFooter className="mx-auto max-w-[1600px] px-4 md:px-8" />
+      </main>
     </>
   );
 }
