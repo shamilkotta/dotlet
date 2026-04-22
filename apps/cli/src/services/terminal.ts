@@ -80,6 +80,7 @@ export const TerminalLive = Layer.succeed(Terminal, {
         text: message,
         isEnabled: process.stdout.isTTY,
         spinner: "dots",
+        discardStdin: false,
       }).start();
     }),
 

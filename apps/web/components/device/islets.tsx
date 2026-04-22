@@ -134,7 +134,7 @@ export async function IsletsList({
     });
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
   const getIsletName = (isletPath: string) =>
-    `${APP_URL}/${target.username}/${target.deviceName}/islet?n=${isletPath}`;
+    `${APP_URL}/${target.username}/${target.deviceName}/islet?n=${encodeURIComponent(isletPath)}`;
 
   return (
     <>

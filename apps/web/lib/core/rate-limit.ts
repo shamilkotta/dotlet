@@ -36,8 +36,8 @@ export async function checkRateLimit(key: string, max: number, windowMs: number)
   return db.transaction(async (tx) => {
     const inserted = await tx.execute<{ key: string }>(
       sql`
-        INSERT INTO "rate_limits" ("key", "count", "last_request")
-        VALUES (${key}, 1, ${nowMs})
+        INSERT INTO "rate_limit" ("id", "key", "count", "last_request")
+        VALUES (gen_random_uuid(), ${key}, 1, ${nowMs})
         ON CONFLICT ("key") DO NOTHING
         RETURNING "key"
       `,
@@ -48,7 +48,7 @@ export async function checkRateLimit(key: string, max: number, windowMs: number)
     }
 
     const result = await tx.execute<{ count: number; last_request: string | number }>(
-      sql`SELECT "count", "last_request" FROM "rate_limits" WHERE "key" = ${key} FOR UPDATE`,
+      sql`SELECT "count", "last_request" FROM "rate_limit" WHERE "key" = ${key} FOR UPDATE`,
     );
 
     const existingRow = result.rows[0];
@@ -67,8 +67,8 @@ export async function checkRateLimit(key: string, max: number, windowMs: number)
 
     await tx.execute(
       sql`
-        INSERT INTO "rate_limits" ("key", "count", "last_request")
-        VALUES (${key}, ${decision.count}, ${decision.lastRequest})
+        INSERT INTO "rate_limit" ("id", "key", "count", "last_request")
+        VALUES (gen_random_uuid(), ${key}, ${decision.count}, ${decision.lastRequest})
         ON CONFLICT ("key") DO UPDATE
         SET
           "count" = EXCLUDED."count",

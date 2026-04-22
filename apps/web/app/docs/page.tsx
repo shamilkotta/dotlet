@@ -111,7 +111,9 @@ export default function DocsPage() {
               >
                 DOTLET
               </Link>
-              <div className="text-xs text-muted-foreground">v0.1.0</div>
+              <div className="text-xs text-muted-foreground">
+                v{process.env.NEXT_PUBLIC_DOTLET_CLI_VERSION} (ALPHA)
+              </div>
             </div>
             <Suspense fallback={null}>
               <AuthHeader />
@@ -131,7 +133,7 @@ export default function DocsPage() {
                   across machines with versioned history.
                 </p>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground/60">
-                  DOTLET CLI V0.1.0
+                  DOTLET CLI V{process.env.NEXT_PUBLIC_DOTLET_CLI_VERSION} (ALPHA)
                 </div>
               </section>
 
@@ -175,7 +177,7 @@ export default function DocsPage() {
                         Verify
                       </span>
                       <DocsCodeBlock>{`$ dot --version
-dotlet v0.1.0`}</DocsCodeBlock>
+dotlet v${process.env.NEXT_PUBLIC_DOTLET_CLI_VERSION}`}</DocsCodeBlock>
                     </div>
                   </div>
                 </section>

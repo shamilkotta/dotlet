@@ -27,7 +27,9 @@ export default function Home() {
           <header className="mb-12 flex items-center justify-between gap-4 border-b border-border pb-6">
             <div className="space-y-1">
               <div className="text-sm font-bold uppercase tracking-widest">DOTLET</div>
-              <div className="text-xs text-muted-foreground">v0.1.0 (ALPHA)</div>
+              <div className="text-xs text-muted-foreground">
+                v{process.env.NEXT_PUBLIC_DOTLET_CLI_VERSION} (ALPHA)
+              </div>
             </div>
             <Suspense fallback={null}>
               <AuthHeader />
@@ -42,7 +44,7 @@ export default function Home() {
               </div>
               <div className="mb-8 border-l border-border pl-7">
                 <div className="mb-4 text-3xl font-bold tracking-tighter text-foreground md:text-5xl">
-                  dotlet v0.1.0_(ALPHA)
+                  dotlet v{process.env.NEXT_PUBLIC_DOTLET_CLI_VERSION} (ALPHA)
                 </div>
                 <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
                   Make your environment portable. dotlet backs up and versions the configs you care

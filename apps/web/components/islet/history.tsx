@@ -42,7 +42,7 @@ export async function IsletHistory({
                 revisionId: revision.id,
               });
               const when = formatRelativeTimeVerbose(revision.createdAt).toUpperCase();
-              const isletName = `${APP_URL}/${target.username}/${target.deviceName}/islet?n=${isletRow.path}&v=${revision.id}`;
+              const isletName = `${APP_URL}/${target.username}/${target.deviceName}/islet?n=${encodeURIComponent(isletRow.path)}&v=${revision.id}`;
 
               return (
                 <li key={revision.id} className="relative pb-12 last:pb-0">

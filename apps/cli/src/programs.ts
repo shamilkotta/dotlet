@@ -64,7 +64,12 @@ export function runLogin() {
     const browser = yield* Browser;
     const terminal = yield* Terminal;
     const config = yield* configStore.read;
-    const start = yield* api.startDeviceAuthorization();
+
+    yield* terminal.startSpinner("Setting up device...");
+    const start = yield* api
+      .startDeviceAuthorization()
+      .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
+    yield* terminal.stopSpinner;
 
     yield* configStore.write({ ...config });
 

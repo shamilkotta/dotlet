@@ -212,7 +212,7 @@ export default async function IsletPage({
               </p>
               <div className="opacity-0 transition-opacity group-hover/islet:opacity-100 group-focus-within/islet:opacity-100">
                 <CopyIsletNameButton
-                  value={`${APP_URL}/${target.username}/${target.deviceName}/islet?n=${islet.path}`}
+                  value={`${APP_URL}/${target.username}/${target.deviceName}/islet?n=${encodeURIComponent(islet.path)}`}
                   ariaLabel={`Copy islet ${islet.path}`}
                 />
               </div>
