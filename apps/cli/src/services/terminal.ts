@@ -1,11 +1,21 @@
 import process from "node:process";
+import { createInterface } from "node:readline/promises";
 import boxen from "boxen";
 import chalk from "chalk";
+import figures from "figures";
 import logSymbols from "log-symbols";
 import ora, { type Ora } from "ora";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import { CliConfigError } from "../errors.js";
+
+export interface ConfirmDangerOptions {
+  readonly title: string;
+  readonly target: string;
+  readonly description: string;
+  readonly confirmLabel?: string;
+}
 
 export interface Terminal {
   readonly log: (message?: string) => Effect.Effect<void>;
@@ -21,6 +31,7 @@ export interface Terminal {
   readonly warnSpinner: (message?: string) => Effect.Effect<void>;
   readonly stopSpinner: Effect.Effect<void>;
   readonly box: (content: string, options?: { title?: string }) => Effect.Effect<void>;
+  readonly confirmDanger: (options: ConfirmDangerOptions) => Effect.Effect<boolean, CliConfigError>;
 }
 
 export const Terminal = Context.GenericTag<Terminal>("@dotlet/Terminal");
@@ -138,5 +149,35 @@ export const TerminalLive = Layer.succeed(Terminal, {
           title: options?.title,
         }),
       );
+    }),
+
+  confirmDanger: ({ title, target, description, confirmLabel }) =>
+    Effect.tryPromise({
+      try: async () => {
+        const headline = `${chalk.red(figures.warning)}  ${chalk.bold.red(title)} ${chalk.dim("·")} ${chalk.red(target)}`;
+        const note = chalk.dim(description);
+
+        console.log();
+        console.log(headline);
+        console.log(note);
+        console.log();
+
+        const action = confirmLabel ?? "Continue with deletion";
+        const prompt = `${chalk.yellow("?")} ${chalk.bold(action)} ${chalk.dim("›")} ${chalk.dim("yes / [no]")} `;
+
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        try {
+          const raw = await rl.question(prompt);
+          const answer = raw.trim().toLowerCase();
+          return answer === "y" || answer === "yes";
+        } finally {
+          rl.close();
+        }
+      },
+      catch: (cause) =>
+        new CliConfigError({
+          message: "Unable to read confirmation",
+          cause,
+        }),
     }),
 });

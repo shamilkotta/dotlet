@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 type TocItem = {
   readonly id: string;
   readonly label: string;
+  readonly nested?: boolean;
 };
 
 export function DocsTableOfContents({ items }: { items: readonly TocItem[] }) {
@@ -41,6 +42,8 @@ export function DocsTableOfContents({ items }: { items: readonly TocItem[] }) {
             <a
               href={`#${item.id}`}
               className={`block py-0.5 text-[11px] transition-colors ${
+                item.nested ? "border-border/40 border-l pl-3" : ""
+              } ${
                 activeId === item.id
                   ? "font-semibold text-foreground"
                   : "text-muted-foreground hover:text-foreground"

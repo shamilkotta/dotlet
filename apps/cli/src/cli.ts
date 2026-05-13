@@ -3,7 +3,9 @@ import * as Command from "@effect/cli/Command";
 import * as Options from "@effect/cli/Options";
 import * as Option from "effect/Option";
 import {
+  runDeleteIslet,
   runDeviceCreate,
+  runDeviceDelete,
   runDeviceList,
   runDeviceUse,
   runList,
@@ -46,6 +48,11 @@ const visibilityOption = Options.choice("visibility", ["public", "private"]).pip
 const forceOption = Options.boolean("force").pipe(
   Options.withAlias("f"),
   Options.withDescription("Replace files that already exist locally"),
+);
+
+const yesOption = Options.boolean("yes").pipe(
+  Options.withAlias("y"),
+  Options.withDescription("Skip the confirmation prompt "),
 );
 
 const absoluteOption = Options.boolean("absolute").pipe(
@@ -124,6 +131,21 @@ const listCommand = Command.make(
     }),
 ).pipe(Command.withDescription("List islets for the selected or specified device"));
 
+const deleteCommand = Command.make(
+  "delete",
+  {
+    name: Args.text({ name: "islet" }).pipe(Args.withDescription("Islet to delete")),
+    device: deviceOption,
+    yes: yesOption,
+  },
+  ({ name, device, yes }) =>
+    runDeleteIslet({
+      name,
+      device: Option.getOrUndefined(device),
+      yes,
+    }),
+).pipe(Command.withDescription("Delete an islet"));
+
 const deviceListCommand = Command.make(
   "list",
   {
@@ -158,6 +180,17 @@ const deviceUseCommand = Command.make(
   ({ name }) => runDeviceUse({ name }),
 ).pipe(Command.withDescription("Set current device"));
 
+const deviceDeleteCommand = Command.make(
+  "delete",
+  {
+    name: Args.text({ name: "device name" }).pipe(
+      Args.withDescription("Name of the device to delete"),
+    ),
+    yes: yesOption,
+  },
+  ({ name, yes }) => runDeviceDelete({ name, yes }),
+).pipe(Command.withDescription("Delete a device "));
+
 const deviceCommand = Command.make(
   "device",
   {
@@ -168,8 +201,13 @@ const deviceCommand = Command.make(
       username: Option.getOrUndefined(username),
     }),
 ).pipe(
-  Command.withDescription("Manage devices: list, create, or choose a default"),
-  Command.withSubcommands([deviceListCommand, deviceCreateCommand, deviceUseCommand]),
+  Command.withDescription("Manage devices: list, create, choose a default, or delete"),
+  Command.withSubcommands([
+    deviceListCommand,
+    deviceCreateCommand,
+    deviceUseCommand,
+    deviceDeleteCommand,
+  ]),
 );
 
 export const rootCommand = Command.make("dotlet", {}, () => runList({})).pipe(
@@ -180,6 +218,7 @@ export const rootCommand = Command.make("dotlet", {}, () => runList({})).pipe(
     pushCommand,
     pullCommand,
     listCommand,
+    deleteCommand,
     deviceCommand,
   ]),
 );

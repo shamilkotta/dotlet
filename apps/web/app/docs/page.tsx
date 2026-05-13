@@ -87,10 +87,12 @@ const TOC_ITEMS = [
   { id: "pull", label: "pull" },
   { id: "pull-targets", label: "Pull Targets" },
   { id: "list", label: "list" },
+  { id: "delete", label: "delete" },
   { id: "device", label: "device" },
-  { id: "device-list", label: "device list" },
-  { id: "device-create", label: "device create" },
-  { id: "device-use", label: "device use" },
+  { id: "device-list", label: "list", nested: true },
+  { id: "device-create", label: "create", nested: true },
+  { id: "device-use", label: "use", nested: true },
+  { id: "device-delete", label: "delete", nested: true },
   { id: "examples", label: "Workflows" },
 ] as const;
 
@@ -204,6 +206,7 @@ Commands:
   push <path>        Push a file or directory as an islet
   pull <islet>       Pull an islet
   list               List islets for a device
+  delete <islet>     Delete an islet from your account
   device             Manage devices`}</DocsCodeBlock>
                 </section>
 
@@ -456,10 +459,45 @@ alice/laptop
                   </div>
                 </section>
 
-                <section id="device" className="scroll-mt-24">
-                  <SectionHeading id="device-h" number="08" title="Device" />
+                <section id="delete" className="scroll-mt-24">
+                  <SectionHeading id="delete-h" number="08" title="Delete" />
                   <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Manage devices: list, create, or choose a default. Running{" "}
+                    Permanently remove an islet from your device.
+                  </p>
+                  <DocsCodeBlock>{`$ dot delete <islet> [options]`}</DocsCodeBlock>
+
+                  <SubHeading id="delete-args" title="Arguments" />
+                  <OptionRow
+                    flag="<islet>"
+                    description="Islet to delete. Same target formats as pull (short form, full form, or web URL) without a version selector."
+                  />
+
+                  <SubHeading id="delete-options" title="Options" />
+                  <div>
+                    <OptionRow
+                      flag="--device"
+                      alias="-d"
+                      value="<device | username/device>"
+                      description="Same meaning as for pull when using short-form islet names. Only your own devices can be targeted for deletion."
+                    />
+                    <OptionRow flag="--yes" alias="-y" description="Skip the confirmation prompt" />
+                  </div>
+
+                  <SubHeading id="delete-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Delete on the default device (prompted)
+$ dot delete ~/.zshrc
+
+# Full form
+$ dot delete alice/laptop:~/.zshrc
+
+# Non-interactive / scripting
+$ dot delete ~/.zshrc --yes`}</DocsCodeBlock>
+                </section>
+
+                <section id="device" className="scroll-mt-24">
+                  <SectionHeading id="device-h" number="09" title="Device" />
+                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    Manage devices: list, create, choose a default, or delete. Running{" "}
                     <InlineCode>dot device</InlineCode> with no subcommand is equivalent to{" "}
                     <InlineCode>dot device list</InlineCode>.
                   </p>
@@ -526,10 +564,31 @@ $ dot device create work -v private`}</DocsCodeBlock>
                   <div className="mt-4">
                     <DocsCodeBlock label="output">{`✔ Default device set to laptop`}</DocsCodeBlock>
                   </div>
+
+                  <SubHeading id="device-delete" title="device delete" />
+                  <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                    Permanently delete a device. All islets on that device are also removed.
+                  </p>
+                  <DocsCodeBlock>{`$ dot device delete <device name> [options]`}</DocsCodeBlock>
+                  <div className="mt-4">
+                    <OptionRow flag="<device name>" description="Name of the device to delete." />
+                    <OptionRow
+                      flag="--yes"
+                      alias="-y"
+                      description="Skip the confirmation prompt."
+                    />
+                  </div>
+
+                  <SubHeading id="device-delete-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Prompted confirmation
+$ dot device delete old-laptop
+
+# Scripting
+$ dot device delete old-laptop --yes`}</DocsCodeBlock>
                 </section>
 
                 <section id="examples" className="scroll-mt-24">
-                  <SectionHeading id="examples-h" number="09" title="Workflows" />
+                  <SectionHeading id="examples-h" number="10" title="Workflows" />
                   <p className="mb-8 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                     Common end-to-end scenarios combining multiple commands.
                   </p>

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { main } from "./main.js";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 export { CONFIG_PATH, DEFAULT_CONFIG, decodeCliConfig } from "./config.js";
 export {
@@ -15,6 +17,6 @@ export { type FileHashEntry, hashFiles as hashes, keyPath, normalizePath } from 
 export { main };
 
 const entrypoint = process.argv[1];
-if (entrypoint && import.meta.url === new URL(`file://${entrypoint}`).href) {
+if (entrypoint && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(entrypoint)) {
   main();
 }

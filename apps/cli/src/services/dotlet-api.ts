@@ -72,11 +72,19 @@ const CreateDeviceResponseSchema = Schema.Struct({
   }),
 });
 
+const DeleteOkSchema = Schema.Struct({
+  ok: Schema.Literal(true),
+});
+
 const ListIsletsResponseSchema = Schema.Struct({
   device: Schema.String,
   islets: Schema.Array(
     Schema.Struct({
       path: Schema.String,
+      visibility: Schema.optional(
+        Schema.Union(Schema.Literal("public"), Schema.Literal("private")),
+      ),
+      updatedAt: Schema.optional(Schema.String),
     }),
   ),
 });
@@ -139,6 +147,12 @@ export interface DotletApi {
     visibility: "public" | "private" | undefined,
     accessToken: string,
   ) => Effect.Effect<CreateDeviceResponse, CliApiError>;
+  readonly deleteDevice: (name: string, accessToken: string) => Effect.Effect<void, CliApiError>;
+  readonly deleteIslet: (
+    device: string,
+    path: string,
+    accessToken: string,
+  ) => Effect.Effect<void, CliApiError>;
   readonly uploadMissingFile: (
     uploadUrl: string,
     content: Buffer,
@@ -360,6 +374,20 @@ export const DotletApiLive = Layer.effect(
           CreateDeviceResponseSchema,
           accessToken,
         ),
+      deleteDevice: (name, accessToken) =>
+        requestJson(
+          `/api/devices?name=${encodeURIComponent(name)}`,
+          { method: "DELETE" },
+          DeleteOkSchema,
+          accessToken,
+        ).pipe(Effect.map(() => undefined)),
+      deleteIslet: (device, path, accessToken) =>
+        requestJson(
+          `/api/islets?device=${encodeURIComponent(device)}&path=${encodeURIComponent(path)}`,
+          { method: "DELETE" },
+          DeleteOkSchema,
+          accessToken,
+        ).pipe(Effect.map(() => undefined)),
       uploadMissingFile: (uploadUrl, content, size) =>
         Effect.tryPromise({
           try: async () => {

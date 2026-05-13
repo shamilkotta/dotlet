@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import figures from "figures";
+import process from "node:process";
 import * as Effect from "effect/Effect";
 import { type CliConfig } from "./config.js";
 import {
@@ -428,6 +429,114 @@ export function runDeviceUse(options: { name: string }) {
       device: options.name,
     });
     yield* terminal.succeedSpinner(`Default device set to ${options.name}`);
+  });
+}
+
+export function runDeviceDelete(options: { name: string; yes?: boolean }) {
+  return Effect.gen(function* () {
+    const configStore = yield* ConfigStore;
+    const terminal = yield* Terminal;
+    const api = yield* DotletApi;
+    const config = yield* configStore.read;
+    const accessToken = yield* requireAccessToken(config);
+
+    const deviceLabel = options.name;
+
+    if (!options.yes) {
+      if (!process.stdin.isTTY) {
+        yield* Effect.fail(
+          new CliValidationError({
+            message:
+              "Cannot prompt for confirmation in a non-interactive environment. Re-run with --yes to confirm deletion.",
+          }),
+        );
+      }
+      const confirmed = yield* terminal.confirmDanger({
+        title: "Delete device",
+        target: deviceLabel,
+        description: "The device and every islet associated with it will be permanently removed.",
+      });
+      if (!confirmed) {
+        yield* terminal.muted(`${figures.cross} Cancelled.`);
+        return;
+      }
+    }
+
+    yield* terminal.startSpinner("Deleting device...");
+    yield* api
+      .deleteDevice(deviceLabel, accessToken)
+      .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
+    yield* terminal.succeedSpinner(`Deleted device: ${deviceLabel}`);
+
+    const wasDefault = config.device?.toLowerCase() === deviceLabel.toLowerCase();
+    if (wasDefault) {
+      yield* configStore.write({ ...config, device: undefined });
+      yield* terminal.muted("Default device cleared because it was deleted.");
+    }
+  });
+}
+
+export function runDeleteIslet(options: { name: string; device?: string; yes?: boolean }) {
+  return Effect.gen(function* () {
+    const configStore = yield* ConfigStore;
+    const terminal = yield* Terminal;
+    const api = yield* DotletApi;
+    const config = yield* configStore.read;
+    const accessToken = yield* requireAccessToken(config);
+
+    const target = yield* Effect.try({
+      try: () =>
+        resolvePullTarget({
+          raw: options.name,
+          deviceFlag: options.device,
+          versionFlag: undefined,
+          username: config.username,
+          device: config.device,
+        }),
+      catch: (cause) =>
+        new CliValidationError({
+          message: cause instanceof Error ? cause.message : "Invalid delete target",
+          cause,
+        }),
+    });
+
+    if (target.version) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message:
+            "Deleting a specific revision is not supported. Remove ?v= from the islet target and try again.",
+        }),
+      );
+    }
+
+    const displayTarget = `${target.device}:${target.islet}`;
+
+    if (!options.yes) {
+      if (!process.stdin.isTTY) {
+        yield* Effect.fail(
+          new CliValidationError({
+            message:
+              "Cannot prompt for confirmation in a non-interactive environment. Re-run with --yes to confirm deletion.",
+          }),
+        );
+      }
+      const confirmed = yield* terminal.confirmDanger({
+        title: "Delete islet",
+        target: displayTarget,
+        description:
+          "All revisions, history, and files for this islet will be permanently removed from Dotlet.",
+      });
+      if (!confirmed) {
+        yield* terminal.muted(`${figures.cross} Cancelled.`);
+        return;
+      }
+    }
+
+    yield* terminal.startSpinner("Deleting islet...");
+    yield* api
+      .deleteIslet(target.device, target.islet, accessToken)
+      .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
+    yield* terminal.succeedSpinner(`Deleted islet: ${displayTarget}`);
   });
 }
 
