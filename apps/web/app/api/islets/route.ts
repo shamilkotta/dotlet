@@ -93,3 +93,65 @@ export async function GET(request: Request) {
     return badRequest(message);
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!session) {
+      return unauthorized();
+    }
+
+    const { searchParams } = new URL(request.url);
+    const requestedDeviceName = searchParams.get("device");
+    const pathRaw = searchParams.get("path")?.trim() ?? "";
+    if (!pathRaw) {
+      return badRequest("path query parameter is required");
+    }
+
+    let target: ReturnType<typeof parseOptionalDeviceTarget>;
+    try {
+      target = parseOptionalDeviceTarget(requestedDeviceName);
+    } catch (parseError) {
+      const message = parseError instanceof Error ? parseError.message : "Invalid device target";
+      return badRequest(message);
+    }
+
+    if (!target.device) {
+      return badRequest("device query parameter is required");
+    }
+
+    const [device] = await db
+      .select({
+        id: devices.id,
+        name: devices.name,
+      })
+      .from(devices)
+      .where(
+        and(
+          eq(devices.userId, session.user.id),
+          sql`lower(${devices.name}) = ${target.device.toLowerCase()}`,
+        ),
+      )
+      .limit(1);
+
+    if (!device) {
+      return badRequest("Device not found", 404);
+    }
+
+    const removed = await db
+      .delete(islets)
+      .where(and(eq(islets.deviceId, device.id), eq(islets.path, pathRaw)))
+      .returning({ id: islets.id });
+
+    if (removed.length === 0) {
+      return badRequest("Islet not found", 404);
+    }
+
+    return ok({ ok: true as const });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid request";
+    return badRequest(message);
+  }
+}

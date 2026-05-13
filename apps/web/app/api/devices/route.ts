@@ -123,3 +123,44 @@ export async function POST(request: Request) {
     return badRequest(message);
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!session) {
+      return unauthorized();
+    }
+
+    const { searchParams } = new URL(request.url);
+    const nameRaw = searchParams.get("name")?.trim() ?? "";
+    if (!nameRaw) {
+      return badRequest("name query parameter is required");
+    }
+
+    const parsedName = DeviceNameSchema.safeParse(nameRaw);
+    if (!parsedName.success) {
+      return badRequest("Invalid device name");
+    }
+
+    const normalizedName = nameRaw.toLowerCase();
+    const [existing] = await db
+      .select({ id: devices.id })
+      .from(devices)
+      .where(
+        and(eq(devices.userId, session.user.id), sql`lower(${devices.name}) = ${normalizedName}`),
+      )
+      .limit(1);
+
+    if (!existing) {
+      return badRequest("Device not found", 404);
+    }
+
+    await db.delete(devices).where(eq(devices.id, existing.id));
+    return ok({ ok: true as const });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to delete device";
+    return badRequest(message);
+  }
+}
