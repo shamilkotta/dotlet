@@ -12,10 +12,7 @@ import {
 
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-import { highlightCode } from "@/lib/highlight";
-
 import styles from "./islet-code-viewer.module.css";
-import { useTheme } from "next-themes";
 import Link from "next/link";
 import { formatBytes, MAX_INLINE_FILE_SIZE_BYTES } from "@/lib/file";
 
@@ -45,28 +42,14 @@ export function IsletCodeViewer({
     lines: number;
     sizeBytes: number;
     isTooLarge: boolean;
+    highlightedHtml: string;
   }>;
   rawDownloadHref: string;
 }) {
-  const { content, language, lines: lineCount, isTooLarge, sizeBytes } = use(contentPromise);
+  const { lines: lineCount, isTooLarge, sizeBytes, highlightedHtml } = use(contentPromise);
   const codeRef = useRef<HTMLDivElement>(null);
-  const { resolvedTheme } = useTheme();
-  const [html, setHtml] = useState("");
   const [selectedLines, setSelectedLines] = useState<SelectedLines>(null);
   const shouldScrollOnHashChange = useRef(true);
-  // const initialPlainHtml = useMemo(() => {
-  //   const escaped = content
-  //     .split("\n")
-  //     .map(
-  //       (line) =>
-  //         `<span class="line">${line
-  //           .replace(/&/g, "&amp;")
-  //           .replace(/</g, "&lt;")
-  //           .replace(/>/g, "&gt;")}</span>`,
-  //     )
-  //     .join("");
-  //   return `<pre class="shiki github-dark"><code>${escaped}</code></pre>`;
-  // }, [content]);
 
   const lineDigits = String(lineCount).length;
 
@@ -93,25 +76,11 @@ export function IsletCodeViewer({
 
   useEffect(() => {
     shouldScrollOnHashChange.current = true;
-  }, [html]);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (isTooLarge) return;
-    setHtml(content);
-    highlightCode(content, language, resolvedTheme as "light" | "dark").then((nextHtml) => {
-      if (!cancelled) {
-        setHtml(nextHtml);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [content, language, isTooLarge]);
+  }, [highlightedHtml]);
 
   useEffect(() => {
     updateLineHighlighting();
-  }, [html, selectedLines, updateLineHighlighting]);
+  }, [highlightedHtml, selectedLines, updateLineHighlighting]);
 
   useEffect(() => {
     if (!shouldScrollOnHashChange.current) return;
@@ -120,7 +89,7 @@ export function IsletCodeViewer({
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [html, selectedLines]);
+  }, [highlightedHtml, selectedLines]);
 
   function handleLineClick(lineNum: number, event: MouseEvent<HTMLAnchorElement>) {
     let newHash: string;
@@ -186,7 +155,7 @@ export function IsletCodeViewer({
         <div
           ref={codeRef}
           className={styles.codeLines}
-          dangerouslySetInnerHTML={{ __html: html }}
+          dangerouslySetInnerHTML={{ __html: highlightedHtml }}
         />
       </div>
     </div>

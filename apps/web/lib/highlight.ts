@@ -53,7 +53,7 @@ function postProcessShikiHtml(html: string): string {
   return html;
 }
 
-export async function highlightCode(code: string, language: string, theme: "light" | "dark") {
+export async function highlightCode(code: string, language: string) {
   const highlighter = await getHighlighter();
 
   let lang = language;
@@ -70,7 +70,7 @@ export async function highlightCode(code: string, language: string, theme: "ligh
         light: LIGHT_THEME,
         dark: DARK_THEME,
       },
-      defaultColor: theme,
+      defaultColor: "light-dark()",
     });
     html = escapeRawGt(html);
     return postProcessShikiHtml(html);

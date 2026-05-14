@@ -11,6 +11,7 @@ import { db } from "@/lib/db/client";
 import { devices, isletRevisions, islets, user } from "@/lib/db/schema";
 import { getIsletStarState } from "@/lib/core/islet-stars";
 import { getLanguageFromPath, getLanguageLabel, MAX_INLINE_FILE_SIZE_BYTES } from "@/lib/file";
+import { highlightCode } from "@/lib/highlight";
 import { getStorageProvider } from "@/lib/storage/provider";
 import {
   IsletCodeViewer,
@@ -54,13 +55,23 @@ const getContent = cache(async (storageKey: string, path: string) => {
       lines: 0,
       sizeBytes,
       isTooLarge: true,
+      highlightedHtml: "",
     };
   }
 
   const content = buffer.toString("utf8");
   const lines = content === "" ? 1 : content.split("\n").length;
+  const highlightedHtml = await highlightCode(content, language);
 
-  return { content, language, languageLabel, lines, sizeBytes, isTooLarge: false };
+  return {
+    content,
+    language,
+    languageLabel,
+    lines,
+    sizeBytes,
+    isTooLarge: false,
+    highlightedHtml,
+  };
 });
 
 export default async function IsletPage({
