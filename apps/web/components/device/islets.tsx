@@ -146,14 +146,14 @@ export async function IsletsList({
             return (
               <details
                 className={`group ${
-                  index > 0 && treeItems[index - 1]!.kind === "group" ? "mt-4" : ""
+                  index > 0 && treeItems[index - 1]!.kind === "group" ? "mt-4" : "mt-3"
                 }`}
                 open={index === firstGroupIndex}
                 key={`dir:${item.directory}`}
               >
                 <summary className="flex cursor-pointer items-center gap-3 hover:text-neutral-500 transition-colors">
                   <ChevronRight className="folder-icon size-4 transition-transform duration-200 text-[#57606a] dark:text-[#919191]" />
-                  <span className="text-xs font-bold tracking-widest uppercase opacity-40">
+                  <span className="text-sm font-semibold tracking-widest  opacity-40">
                     {item.directory}/
                   </span>
                 </summary>
