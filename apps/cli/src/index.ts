@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 
 export { CONFIG_PATH, DEFAULT_CONFIG, decodeCliConfig } from "./config.js";
 export {
-  buildPullApiPath,
   parsePullTarget,
   resolvePullOutputPath,
   resolvePullTarget,

@@ -1,12 +1,21 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { parseOptionalDeviceTarget } from "@/lib/core/device-target";
 import { db } from "@/lib/db/client";
 import { badRequest, ok, unauthorized } from "@/lib/core/http";
-import { devices, islets, user } from "@/lib/db/schema";
+import { devices, islets, user, visibilityEnum } from "@/lib/db/schema";
 
-export const dynamic = "force-dynamic";
+const IsletPathSchema = z.string().trim().min(1).max(2048);
+const PatchIsletBody = z
+  .object({
+    name: IsletPathSchema.optional(),
+    visibility: z.enum(visibilityEnum.enumValues).optional(),
+  })
+  .refine((body) => body.name !== undefined || body.visibility !== undefined, {
+    message: "Provide valid update fields",
+  });
 
 export async function GET(request: Request) {
   try {
@@ -18,11 +27,11 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const requestedDeviceName = searchParams.get("device");
+    const requestedDeviceName = searchParams.get("d");
     const target = parseOptionalDeviceTarget(requestedDeviceName);
 
     if (!target.device) {
-      return badRequest("device query parameter is required");
+      return badRequest("Device is required");
     }
 
     const [device] =
@@ -94,6 +103,105 @@ export async function GET(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!session) {
+      return unauthorized();
+    }
+
+    const { searchParams } = new URL(request.url);
+    const requestedDeviceName = searchParams.get("d");
+    const pathRaw = searchParams.get("n")?.trim() ?? "";
+    if (!pathRaw) {
+      return badRequest("Islet is required");
+    }
+
+    const body = PatchIsletBody.parse(await request.json());
+
+    let target: ReturnType<typeof parseOptionalDeviceTarget>;
+    try {
+      target = parseOptionalDeviceTarget(requestedDeviceName);
+    } catch (parseError) {
+      const message = parseError instanceof Error ? parseError.message : "Invalid device";
+      return badRequest(message);
+    }
+
+    if (!target.device) {
+      return badRequest("Device is required");
+    }
+
+    const [row] = await db
+      .select({
+        isletId: islets.id,
+        path: islets.path,
+        visibility: islets.visibility,
+        deviceId: devices.id,
+      })
+      .from(islets)
+      .innerJoin(devices, eq(islets.deviceId, devices.id))
+      .where(
+        and(
+          eq(devices.userId, session.user.id),
+          sql`lower(${devices.name}) = ${target.device.toLowerCase()}`,
+          eq(islets.path, pathRaw),
+        ),
+      )
+      .limit(1);
+
+    if (!row) {
+      return badRequest("Islet not found", 404);
+    }
+
+    const nextPath = body.name?.trim() ?? row.path;
+    const nextVisibility = body.visibility ?? row.visibility;
+
+    const pathChanged = nextPath !== row.path;
+    const visibilityChanged = nextVisibility !== row.visibility;
+
+    if (!pathChanged && !visibilityChanged) {
+      return ok({
+        islet: { path: row.path, visibility: row.visibility },
+        changed: false,
+      });
+    }
+
+    if (pathChanged) {
+      const [pathTaken] = await db
+        .select({ id: islets.id })
+        .from(islets)
+        .where(and(eq(islets.deviceId, row.deviceId), eq(islets.path, nextPath)))
+        .limit(1);
+      if (pathTaken) {
+        return badRequest("An islet with that path already exists on this device", 409);
+      }
+    }
+
+    const [updated] = await db
+      .update(islets)
+      .set({
+        ...(pathChanged ? { path: nextPath } : {}),
+        ...(visibilityChanged ? { visibility: nextVisibility } : {}),
+      })
+      .where(eq(islets.id, row.isletId))
+      .returning({
+        path: islets.path,
+        visibility: islets.visibility,
+      });
+
+    if (!updated) {
+      return badRequest("Unable to update islet", 500);
+    }
+
+    return ok({ islet: updated, changed: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid request";
+    return badRequest(message);
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -104,22 +212,22 @@ export async function DELETE(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const requestedDeviceName = searchParams.get("device");
-    const pathRaw = searchParams.get("path")?.trim() ?? "";
-    if (!pathRaw) {
-      return badRequest("path query parameter is required");
+    const requestedDeviceName = searchParams.get("d");
+    const isletName = searchParams.get("n")?.trim() ?? "";
+    if (!isletName) {
+      return badRequest("Islet is required");
     }
 
     let target: ReturnType<typeof parseOptionalDeviceTarget>;
     try {
       target = parseOptionalDeviceTarget(requestedDeviceName);
     } catch (parseError) {
-      const message = parseError instanceof Error ? parseError.message : "Invalid device target";
+      const message = parseError instanceof Error ? parseError.message : "Invalid device";
       return badRequest(message);
     }
 
     if (!target.device) {
-      return badRequest("device query parameter is required");
+      return badRequest("Device is required");
     }
 
     const [device] = await db
@@ -137,12 +245,12 @@ export async function DELETE(request: Request) {
       .limit(1);
 
     if (!device) {
-      return badRequest("Device not found", 404);
+      return badRequest("Islet not found", 404);
     }
 
     const removed = await db
       .delete(islets)
-      .where(and(eq(islets.deviceId, device.id), eq(islets.path, pathRaw)))
+      .where(and(eq(islets.deviceId, device.id), eq(islets.path, isletName)))
       .returning({ id: islets.id });
 
     if (removed.length === 0) {

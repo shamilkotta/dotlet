@@ -32,6 +32,10 @@ export interface Terminal {
   readonly stopSpinner: Effect.Effect<void>;
   readonly box: (content: string, options?: { title?: string }) => Effect.Effect<void>;
   readonly confirmDanger: (options: ConfirmDangerOptions) => Effect.Effect<boolean, CliConfigError>;
+  readonly promptWithDefault: (options: {
+    label: string;
+    defaultValue: string;
+  }) => Effect.Effect<string, CliConfigError>;
 }
 
 export const Terminal = Context.GenericTag<Terminal>("@dotlet/Terminal");
@@ -177,6 +181,27 @@ export const TerminalLive = Layer.succeed(Terminal, {
       catch: (cause) =>
         new CliConfigError({
           message: "Unable to read confirmation",
+          cause,
+        }),
+    }),
+
+  promptWithDefault: ({ label, defaultValue }) =>
+    Effect.tryPromise({
+      try: async () => {
+        const hint = chalk.dim(`[${defaultValue}]`);
+        const prompt = `${chalk.yellow("?")} ${chalk.bold(label)} ${hint} ${chalk.dim("›")} `;
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        try {
+          const raw = await rl.question(prompt);
+          const trimmed = raw.trim();
+          return trimmed === "" ? defaultValue : trimmed;
+        } finally {
+          rl.close();
+        }
+      },
+      catch: (cause) =>
+        new CliConfigError({
+          message: "Unable to read input",
           cause,
         }),
     }),

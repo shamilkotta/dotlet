@@ -170,7 +170,7 @@ export default async function IsletPage({
   });
 
   const downloadParams = new URLSearchParams({
-    device: `${target.username}/${target.deviceName}`,
+    d: `${target.username}/${target.deviceName}`,
     n: islet.path,
   });
   if (versionTrimmed) {

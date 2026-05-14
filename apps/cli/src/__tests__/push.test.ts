@@ -21,6 +21,7 @@ function createTerminal() {
     stopSpinner: Effect.void,
     box: vi.fn(() => Effect.void),
     confirmDanger: vi.fn(() => Effect.succeed(false)),
+    promptWithDefault: vi.fn(() => Effect.succeed("")),
   };
 }
 

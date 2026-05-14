@@ -10,8 +10,6 @@ import { db } from "@/lib/db/client";
 import { devices, isletRevisions, islets, user } from "@/lib/db/schema";
 import { getStorageProvider } from "@/lib/storage/provider";
 
-export const dynamic = "force-dynamic";
-
 function attachmentContentDisposition(fileName: string): string {
   const trimmed = fileName.trim() || "file";
   const asciiFallback =
@@ -30,19 +28,19 @@ export async function GET(request: Request) {
     });
 
     const { searchParams } = new URL(request.url);
-    const deviceRaw = searchParams.get("device")?.trim() ?? "";
+    const deviceRaw = searchParams.get("d")?.trim() ?? "";
     const isletPath = searchParams.get("n")?.trim() ?? "";
     const version = searchParams.get("v")?.trim() || null;
 
     if (!deviceRaw || !isletPath) {
-      return badRequest("device and n query parameters are required");
+      return badRequest("Device and islet are required");
     }
 
     let deviceTarget: { username: string; device: string };
     try {
       deviceTarget = parseRequiredDeviceTarget(deviceRaw);
     } catch {
-      return badRequest("Device must be in format username/device");
+      return badRequest("Invalid device target");
     }
 
     const [target] = await db

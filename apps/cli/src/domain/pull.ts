@@ -227,14 +227,6 @@ export function parsePullTarget(rawTarget: string): PullTarget {
   };
 }
 
-export function buildPullApiPath(target: PullTarget): string {
-  let path = `/api/islets/pull?device=${encodeURIComponent(target.device)}&islet=${encodeURIComponent(target.islet)}`;
-  if (target.version) {
-    path += `&v=${encodeURIComponent(target.version)}`;
-  }
-  return path;
-}
-
 export function resolvePullOutputPath(
   file: PullFile,
   islet: string,

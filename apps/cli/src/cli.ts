@@ -7,12 +7,14 @@ import {
   runDeviceCreate,
   runDeviceDelete,
   runDeviceList,
+  runDeviceUpdate,
   runDeviceUse,
   runList,
   runLogin,
   runLogout,
   runPull,
   runPush,
+  runUpdateIslet,
 } from "./programs.js";
 
 const deviceOption = Options.text("device").pipe(
@@ -146,6 +148,19 @@ const deleteCommand = Command.make(
     }),
 ).pipe(Command.withDescription("Delete an islet"));
 
+const updateCommand = Command.make(
+  "update",
+  {
+    name: Args.text({ name: "islet" }).pipe(Args.withDescription("Islet name")),
+    device: deviceOption,
+  },
+  ({ name, device }) =>
+    runUpdateIslet({
+      name,
+      device: Option.getOrUndefined(device),
+    }),
+).pipe(Command.withDescription("Update islet name and visibility"));
+
 const deviceListCommand = Command.make(
   "list",
   {
@@ -191,6 +206,17 @@ const deviceDeleteCommand = Command.make(
   ({ name, yes }) => runDeviceDelete({ name, yes }),
 ).pipe(Command.withDescription("Delete a device "));
 
+const deviceUpdateCommand = Command.make(
+  "update",
+  {
+    device: deviceOption,
+  },
+  ({ device }) =>
+    runDeviceUpdate({
+      device: Option.getOrUndefined(device),
+    }),
+).pipe(Command.withDescription("Update device name and visibility"));
+
 const deviceCommand = Command.make(
   "device",
   {
@@ -201,11 +227,12 @@ const deviceCommand = Command.make(
       username: Option.getOrUndefined(username),
     }),
 ).pipe(
-  Command.withDescription("Manage devices: list, create, choose a default, or delete"),
+  Command.withDescription("Manage devices: list, create, choose a default, update, or delete"),
   Command.withSubcommands([
     deviceListCommand,
     deviceCreateCommand,
     deviceUseCommand,
+    deviceUpdateCommand,
     deviceDeleteCommand,
   ]),
 );
@@ -219,6 +246,7 @@ export const rootCommand = Command.make("dotlet", {}, () => runList({})).pipe(
     pullCommand,
     listCommand,
     deleteCommand,
+    updateCommand,
     deviceCommand,
   ]),
 );

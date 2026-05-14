@@ -7,8 +7,6 @@ import { devices, isletRevisions, islets, user } from "@/lib/db/schema";
 import { getStorageProvider } from "@/lib/storage/provider";
 import { parsePullDeviceTarget } from "./access";
 
-export const dynamic = "force-dynamic";
-
 type PulledIslet = {
   id: string;
   path: string;
@@ -26,11 +24,11 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const target = parsePullDeviceTarget(searchParams.get("device"));
-    const islet = searchParams.get("islet")?.trim() ?? "";
+    const target = parsePullDeviceTarget(searchParams.get("d"));
+    const islet = searchParams.get("n")?.trim() ?? "";
     const version = searchParams.get("v")?.trim() || null;
     if (!islet?.trim()) {
-      return badRequest("islet query parameter is required");
+      return badRequest("Islet is required");
     }
 
     const [device] = await db
@@ -51,7 +49,7 @@ export async function GET(request: Request) {
       .limit(1);
 
     if (!device) {
-      return badRequest("Device not found", 404);
+      return badRequest("Islet not found", 404);
     }
 
     const isOwner = device.userId === session.user.id;

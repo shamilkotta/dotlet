@@ -13,7 +13,7 @@ import {
   CliUploadError,
   CliValidationError,
 } from "./errors.js";
-import { buildPullApiPath, resolvePullTarget, writePulledFiles } from "./domain/pull.js";
+import { resolvePullTarget, writePulledFiles } from "./domain/pull.js";
 import { buildUploadOncePerHash, uploadMissingFiles } from "./domain/push.js";
 import { PathService } from "./domain/path.js";
 import { Browser } from "./services/browser.js";
@@ -297,7 +297,10 @@ export function runPull(options: {
 
     yield* terminal.startSpinner("Fetching islet...");
     const payload = yield* api
-      .pullIslet(buildPullApiPath(target), accessToken)
+      .pullIslet(
+        { device: target.device, islet: target.islet, version: target.version },
+        accessToken,
+      )
       .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
 
     if (payload.files.length === 0) {
@@ -473,6 +476,242 @@ export function runDeviceDelete(options: { name: string; yes?: boolean }) {
       yield* configStore.write({ ...config, device: undefined });
       yield* terminal.muted("Default device cleared because it was deleted.");
     }
+  });
+}
+
+function parseVisibilityAnswer(value: string) {
+  const t = value.trim().toLowerCase();
+  if (t === "public" || t === "private") {
+    return t;
+  }
+  return;
+}
+
+export function runDeviceUpdate(options: { device?: string }) {
+  return Effect.gen(function* () {
+    const configStore = yield* ConfigStore;
+    const terminal = yield* Terminal;
+    const api = yield* DotletApi;
+    const config = yield* configStore.read;
+    const accessToken = yield* requireAccessToken(config);
+
+    if (!process.stdin.isTTY) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message:
+            "The update command is interactive and requires a TTY. Run this command in a normal terminal session.",
+        }),
+      );
+    }
+
+    const deviceName = yield* requireDeviceName(options.device, config);
+
+    yield* terminal.startSpinner("Loading device...");
+    const payload = yield* api
+      .listDevices(undefined, accessToken)
+      .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
+
+    const match = payload.devices.find((d) => d.name.toLowerCase() === deviceName.toLowerCase());
+    if (!match) {
+      yield* terminal.stopSpinner;
+      return yield* Effect.fail(
+        new CliValidationError({
+          message: `Device "${deviceName}" not found.`,
+        }),
+      );
+    }
+
+    yield* terminal.succeedSpinner(`Loaded device: ${match.name}`);
+
+    const currentVisibility = match.visibility ?? "private";
+
+    yield* terminal.log();
+    yield* terminal.info(chalk.dim("Press Enter to keep the value shown in brackets."));
+    yield* terminal.log();
+
+    const nameAnswer = yield* terminal.promptWithDefault({
+      label: "Device name",
+      defaultValue: match.name,
+    });
+    const trimmedName = nameAnswer.trim();
+    if (!trimmedName) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message: "Device name cannot be empty.",
+        }),
+      );
+    }
+
+    const visibilityAnswer = yield* terminal.promptWithDefault({
+      label: "Visibility (public or private)",
+      defaultValue: currentVisibility,
+    });
+    const parsedVisibility = parseVisibilityAnswer(visibilityAnswer);
+    if (!parsedVisibility) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message: 'Visibility must be "public" or "private".',
+        }),
+      );
+    }
+
+    const rename = trimmedName !== match.name ? trimmedName : undefined;
+    const visibility = parsedVisibility !== currentVisibility ? parsedVisibility : undefined;
+
+    if (!rename && !visibility) {
+      yield* terminal.muted("No changes.");
+      return;
+    }
+
+    yield* terminal.startSpinner("Updating device...");
+    const result = yield* api
+      .updateDevice(
+        { name: match.name },
+        {
+          ...(rename !== undefined ? { name: rename } : {}),
+          ...(visibility !== undefined ? { visibility } : {}),
+        },
+        accessToken,
+      )
+      .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
+
+    yield* terminal.succeedSpinner(
+      result.changed ? "Device updated" : "Device already matched your choices",
+    );
+
+    const wasDefault = config.device?.toLowerCase() === match.name.toLowerCase();
+    if (wasDefault && rename !== undefined && result.device.name) {
+      yield* configStore.write({
+        ...config,
+        device: result.device.name,
+      });
+      yield* terminal.muted("Updated default device name.");
+    }
+
+    yield* terminal.success(
+      `Device ${chalk.bold(result.device.name)} (${visibilityBadge(result.device.visibility)})`,
+    );
+  });
+}
+
+export function runUpdateIslet(options: { name: string; device?: string }) {
+  return Effect.gen(function* () {
+    const configStore = yield* ConfigStore;
+    const terminal = yield* Terminal;
+    const api = yield* DotletApi;
+    const config = yield* configStore.read;
+    const accessToken = yield* requireAccessToken(config);
+
+    if (!process.stdin.isTTY) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message:
+            "The update command is interactive and requires a TTY. Run this command in a normal terminal session.",
+        }),
+      );
+    }
+
+    const target = yield* Effect.try({
+      try: () =>
+        resolvePullTarget({
+          raw: options.name,
+          deviceFlag: options.device,
+          versionFlag: undefined,
+          username: config.username,
+          device: config.device,
+        }),
+      catch: (cause) =>
+        new CliValidationError({
+          message: cause instanceof Error ? cause.message : "Invalid update target",
+          cause,
+        }),
+    });
+
+    if (target.version) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message:
+            "Updating a specific revision is not supported. Remove ?v= from the islet target and try again.",
+        }),
+      );
+    }
+
+    yield* terminal.startSpinner("Loading islet...");
+    const listPayload = yield* api
+      .listIslets(target.device, accessToken)
+      .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
+
+    const isletRow = listPayload.islets.find((i) => i.path === target.islet);
+    if (!isletRow) {
+      yield* terminal.stopSpinner;
+      return yield* Effect.fail(
+        new CliValidationError({
+          message: `Islet not found on device: ${listPayload.device}:${target.islet}`,
+        }),
+      );
+    }
+
+    yield* terminal.succeedSpinner(`Loaded islet: ${listPayload.device}:${isletRow.path}`);
+
+    const currentVisibility = isletRow.visibility ?? "private";
+
+    yield* terminal.log();
+    yield* terminal.info(chalk.dim("Press Enter to keep the value shown in brackets."));
+    yield* terminal.log();
+
+    const pathAnswer = yield* terminal.promptWithDefault({
+      label: "Islet name",
+      defaultValue: isletRow.path,
+    });
+    const trimmedPath = pathAnswer.trim();
+    if (!trimmedPath) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message: "Islet path cannot be empty.",
+        }),
+      );
+    }
+
+    const visibilityAnswer = yield* terminal.promptWithDefault({
+      label: "Visibility (public or private)",
+      defaultValue: currentVisibility,
+    });
+    const parsedVisibility = parseVisibilityAnswer(visibilityAnswer);
+    if (!parsedVisibility) {
+      yield* Effect.fail(
+        new CliValidationError({
+          message: 'Visibility must be "public" or "private".',
+        }),
+      );
+    }
+
+    const newPath = trimmedPath !== isletRow.path ? trimmedPath : undefined;
+    const visibility = parsedVisibility !== currentVisibility ? parsedVisibility : undefined;
+
+    if (!newPath && !visibility) {
+      yield* terminal.muted("No changes.");
+      return;
+    }
+
+    yield* terminal.startSpinner("Updating islet...");
+    const result = yield* api
+      .updateIslet(
+        { device: listPayload.device, name: isletRow.path },
+        {
+          ...(newPath !== undefined ? { name: newPath } : {}),
+          ...(visibility !== undefined ? { visibility } : {}),
+        },
+        accessToken,
+      )
+      .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
+
+    yield* terminal.succeedSpinner(
+      result.changed ? "Islet updated" : "Islet already matched your choices",
+    );
+
+    yield* terminal.success(
+      `${chalk.bold(listPayload.device)}:${chalk.bold(result.islet.path)} ${visibilityBadge(result.islet.visibility)}`,
+    );
   });
 }
 

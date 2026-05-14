@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -11,8 +11,6 @@ import {
   isValidUsername,
 } from "@/lib/core/username";
 import { devices, user, visibilityEnum } from "@/lib/db/schema";
-
-export const dynamic = "force-dynamic";
 
 const DeviceNameSchema = z
   .string()
@@ -28,6 +26,15 @@ const CreateBody = z.object({
   visibility: VisibilitySchema.optional(),
 });
 
+const PatchBody = z
+  .object({
+    name: DeviceNameSchema.optional(),
+    visibility: VisibilitySchema.optional(),
+  })
+  .refine((body) => body.name !== undefined || body.visibility !== undefined, {
+    message: "Provide valid update fields",
+  });
+
 export async function GET(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -38,7 +45,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const requestedUsername = searchParams.get("username")?.trim() ?? "";
+    const requestedUsername = searchParams.get("u")?.trim() ?? "";
 
     let ownerUserId = session.user.id;
     let ownerUsername: string | null = null;
@@ -124,6 +131,97 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!session) {
+      return unauthorized();
+    }
+
+    const { searchParams } = new URL(request.url);
+    const deviceName = searchParams.get("d")?.trim() ?? "";
+    const parsedName = DeviceNameSchema.safeParse(deviceName);
+    if (!parsedName.success) {
+      return badRequest("Invalid device");
+    }
+
+    const body = PatchBody.parse(await request.json());
+    const normalizedCurrent = deviceName.toLowerCase();
+    const [existing] = await db
+      .select({
+        id: devices.id,
+        name: devices.name,
+        visibility: devices.visibility,
+      })
+      .from(devices)
+      .where(
+        and(
+          eq(devices.userId, session.user.id),
+          sql`lower(${devices.name}) = ${normalizedCurrent}`,
+        ),
+      )
+      .limit(1);
+
+    if (!existing) {
+      return badRequest("Device not found", 404);
+    }
+
+    const nextName = body.name?.trim() ?? existing.name;
+    const nextVisibility = body.visibility ?? existing.visibility;
+
+    const nameChanged = nextName !== existing.name;
+    const visibilityChanged = nextVisibility !== existing.visibility;
+
+    if (!nameChanged && !visibilityChanged) {
+      return ok({
+        device: { name: existing.name, visibility: existing.visibility },
+        changed: false,
+      });
+    }
+
+    if (nameChanged) {
+      const normalizedNext = nextName.toLowerCase();
+      const [nameTaken] = await db
+        .select({ id: devices.id })
+        .from(devices)
+        .where(
+          and(
+            eq(devices.userId, session.user.id),
+            sql`lower(${devices.name}) = ${normalizedNext}`,
+            ne(devices.id, existing.id),
+          ),
+        )
+        .limit(1);
+      if (nameTaken) {
+        return badRequest("A device with same name already exists", 409);
+      }
+    }
+
+    const [updated] = await db
+      .update(devices)
+      .set({
+        ...(nameChanged ? { name: nextName } : {}),
+        ...(visibilityChanged ? { visibility: nextVisibility } : {}),
+      })
+      .where(eq(devices.id, existing.id))
+      .returning({
+        name: devices.name,
+        visibility: devices.visibility,
+      });
+
+    if (!updated) {
+      return badRequest("Unable to update device", 500);
+    }
+
+    return ok({ device: updated, changed: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to update device";
+    return badRequest(message);
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -134,14 +232,10 @@ export async function DELETE(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const nameRaw = searchParams.get("name")?.trim() ?? "";
-    if (!nameRaw) {
-      return badRequest("name query parameter is required");
-    }
-
+    const nameRaw = searchParams.get("d")?.trim() ?? "";
     const parsedName = DeviceNameSchema.safeParse(nameRaw);
     if (!parsedName.success) {
-      return badRequest("Invalid device name");
+      return badRequest("Invalid device");
     }
 
     const normalizedName = nameRaw.toLowerCase();

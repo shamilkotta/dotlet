@@ -88,10 +88,12 @@ const TOC_ITEMS = [
   { id: "pull-targets", label: "Pull Targets" },
   { id: "list", label: "list" },
   { id: "delete", label: "delete" },
+  { id: "update", label: "update" },
   { id: "device", label: "device" },
   { id: "device-list", label: "list", nested: true },
   { id: "device-create", label: "create", nested: true },
   { id: "device-use", label: "use", nested: true },
+  { id: "device-update", label: "update", nested: true },
   { id: "device-delete", label: "delete", nested: true },
   { id: "examples", label: "Workflows" },
 ] as const;
@@ -207,6 +209,7 @@ Commands:
   pull <islet>       Pull an islet
   list               List islets for a device
   delete <islet>     Delete an islet from your account
+  update <islet>     Update an islet
   device             Manage devices`}</DocsCodeBlock>
                 </section>
 
@@ -494,14 +497,55 @@ $ dot delete alice/laptop:~/.zshrc
 $ dot delete ~/.zshrc --yes`}</DocsCodeBlock>
                 </section>
 
-                <section id="device" className="scroll-mt-24">
-                  <SectionHeading id="device-h" number="09" title="Device" />
+                <section id="update" className="scroll-mt-24">
+                  <SectionHeading id="update-h" number="09" title="Update" />
                   <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Manage devices: list, create, choose a default, or delete. Running{" "}
+                    Update islet name and visibility.
+                  </p>
+                  <DocsCodeBlock>{`$ dot update <islet> [options]`}</DocsCodeBlock>
+
+                  <SubHeading id="update-args" title="Arguments" />
+                  <OptionRow
+                    flag="<islet>"
+                    description="Islet to update. Same target formats as pull without a version selector."
+                  />
+
+                  <SubHeading id="update-options" title="Options" />
+                  <div>
+                    <OptionRow
+                      flag="--device"
+                      alias="-d"
+                      value="<device | username/device>"
+                      description="Same meaning as for pull when using short-form islet names."
+                    />
+                  </div>
+
+                  <SubHeading id="update-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Update on the default device (prompted)
+$ dot update ~/.zshrc
+
+# Short form with explicit device
+$ dot update ~/.zshrc -d laptop
+
+# Full form
+$ dot update alice/laptop:~/.zshrc`}</DocsCodeBlock>
+                </section>
+
+                <section id="device" className="scroll-mt-24">
+                  <SectionHeading id="device-h" number="10" title="Device" />
+                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    Manage devices: list, create, choose a default, update, or delete. Running{" "}
                     <InlineCode>dot device</InlineCode> with no subcommand is equivalent to{" "}
                     <InlineCode>dot device list</InlineCode>.
                   </p>
-                  <DocsCodeBlock>{`$ dot device [subcommand] [options]`}</DocsCodeBlock>
+                  <DocsCodeBlock>{`$ dot device [subcommand] [options]
+
+Subcommands:
+  list    List all devices
+  create  Register a new device
+  use     Set the default device
+  update  Update device name and visibility
+  delete  Delete a device`}</DocsCodeBlock>
 
                   <SubHeading id="device-list" title="device list" />
                   <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
@@ -565,6 +609,28 @@ $ dot device create work -v private`}</DocsCodeBlock>
                     <DocsCodeBlock label="output">{`✔ Default device set to laptop`}</DocsCodeBlock>
                   </div>
 
+                  <SubHeading id="device-update" title="device update" />
+                  <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                    Update device name and visibility. Uses the default device when{" "}
+                    <InlineCode>--device</InlineCode> is omitted.
+                  </p>
+                  <DocsCodeBlock>{`$ dot device update [options]`}</DocsCodeBlock>
+                  <div className="mt-4">
+                    <OptionRow
+                      flag="--device"
+                      alias="-d"
+                      value="<name>"
+                      description="Device to update. Defaults to the configured default device."
+                    />
+                  </div>
+
+                  <SubHeading id="device-update-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Update the default device (prompted)
+$ dot device update
+
+# Update a specific device by name
+$ dot device update -d work`}</DocsCodeBlock>
+
                   <SubHeading id="device-delete" title="device delete" />
                   <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
                     Permanently delete a device. All islets on that device are also removed.
@@ -588,7 +654,7 @@ $ dot device delete old-laptop --yes`}</DocsCodeBlock>
                 </section>
 
                 <section id="examples" className="scroll-mt-24">
-                  <SectionHeading id="examples-h" number="10" title="Workflows" />
+                  <SectionHeading id="examples-h" number="11" title="Workflows" />
                   <p className="mb-8 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                     Common end-to-end scenarios combining multiple commands.
                   </p>

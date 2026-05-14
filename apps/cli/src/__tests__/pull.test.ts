@@ -1,7 +1,6 @@
 import * as Effect from "effect/Effect";
 import { describe, expect, it, vi } from "vitest";
 import {
-  buildPullApiPath,
   parsePullTarget,
   resolvePullOutputPath,
   resolvePullTarget,
@@ -27,6 +26,7 @@ function createTerminal() {
     stopSpinner: Effect.void,
     box: vi.fn(() => Effect.void),
     confirmDanger: vi.fn(() => Effect.succeed(false)),
+    promptWithDefault: vi.fn(() => Effect.succeed("")),
   };
 }
 
@@ -66,26 +66,6 @@ describe("parsePullTarget", () => {
     expect(() => parsePullTarget("alice/laptop:")).toThrowError(
       "Pull target must be in format username/device:islet",
     );
-  });
-});
-
-describe("buildPullApiPath", () => {
-  it("encodes device and islet query params", () => {
-    const path = buildPullApiPath({
-      device: "alice/macbook-pro",
-      islet: "nvim/init.lua",
-    });
-
-    expect(path).toBe("/api/islets/pull?device=alice%2Fmacbook-pro&islet=nvim%2Finit.lua");
-  });
-
-  it("appends v when version is set", () => {
-    const path = buildPullApiPath({
-      device: "alice/macbook-pro",
-      islet: ".zshrc",
-      version: "abc1234",
-    });
-    expect(path).toBe("/api/islets/pull?device=alice%2Fmacbook-pro&islet=.zshrc&v=abc1234");
   });
 });
 

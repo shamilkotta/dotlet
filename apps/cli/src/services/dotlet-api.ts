@@ -72,6 +72,14 @@ const CreateDeviceResponseSchema = Schema.Struct({
   }),
 });
 
+const UpdateDeviceResponseSchema = Schema.Struct({
+  device: Schema.Struct({
+    name: Schema.String,
+    visibility: Schema.Union(Schema.Literal("public"), Schema.Literal("private")),
+  }),
+  changed: Schema.Boolean,
+});
+
 const DeleteOkSchema = Schema.Struct({
   ok: Schema.Literal(true),
 });
@@ -87,6 +95,14 @@ const ListIsletsResponseSchema = Schema.Struct({
       updatedAt: Schema.optional(Schema.String),
     }),
   ),
+});
+
+const UpdateIsletResponseSchema = Schema.Struct({
+  islet: Schema.Struct({
+    path: Schema.String,
+    visibility: Schema.Union(Schema.Literal("public"), Schema.Literal("private")),
+  }),
+  changed: Schema.Boolean,
 });
 
 const GetSessionResponseSchema = Schema.Union(
@@ -130,7 +146,7 @@ export interface DotletApi {
     accessToken: string,
   ) => Effect.Effect<PushResponse, CliApiError>;
   readonly pullIslet: (
-    path: string,
+    query: { readonly device: string; readonly islet: string; readonly version?: string },
     accessToken: string,
   ) => Effect.Effect<PullResponse, CliApiError>;
   readonly listIslets: (
@@ -147,12 +163,22 @@ export interface DotletApi {
     visibility: "public" | "private" | undefined,
     accessToken: string,
   ) => Effect.Effect<CreateDeviceResponse, CliApiError>;
+  readonly updateDevice: (
+    query: { readonly name: string },
+    body: { readonly name?: string; readonly visibility?: "public" | "private" },
+    accessToken: string,
+  ) => Effect.Effect<Schema.Schema.Type<typeof UpdateDeviceResponseSchema>, CliApiError>;
   readonly deleteDevice: (name: string, accessToken: string) => Effect.Effect<void, CliApiError>;
   readonly deleteIslet: (
     device: string,
     path: string,
     accessToken: string,
   ) => Effect.Effect<void, CliApiError>;
+  readonly updateIslet: (
+    query: { readonly device: string; readonly name: string },
+    body: { readonly name?: string; readonly visibility?: "public" | "private" },
+    accessToken: string,
+  ) => Effect.Effect<Schema.Schema.Type<typeof UpdateIsletResponseSchema>, CliApiError>;
   readonly uploadMissingFile: (
     uploadUrl: string,
     content: Buffer,
@@ -339,17 +365,31 @@ export const DotletApiLive = Layer.effect(
           PushResponseSchema,
           accessToken,
         ),
-      pullIslet: (path, accessToken) =>
-        requestJson(path, { method: "GET" }, PullResponseSchema, accessToken),
+      pullIslet: (query, accessToken) => {
+        const queryParams = new URLSearchParams({
+          d: query.device,
+          n: query.islet,
+        });
+        if (query.version) {
+          queryParams.set("v", query.version);
+        }
+
+        return requestJson(
+          `/api/islets/pull?${queryParams.toString()}`,
+          { method: "GET" },
+          PullResponseSchema,
+          accessToken,
+        );
+      },
       listIslets: (device, accessToken) =>
         requestJson(
-          `/api/islets?device=${encodeURIComponent(device)}`,
+          `/api/islets?d=${encodeURIComponent(device)}`,
           { method: "GET" },
           ListIsletsResponseSchema,
           accessToken,
         ),
       listDevices: (username, accessToken) => {
-        const query = username?.trim() ? `?username=${encodeURIComponent(username.trim())}` : "";
+        const query = username?.trim() ? `?u=${encodeURIComponent(username.trim())}` : "";
         return requestJson(
           `/api/devices${query}`,
           { method: "GET" },
@@ -374,20 +414,40 @@ export const DotletApiLive = Layer.effect(
           CreateDeviceResponseSchema,
           accessToken,
         ),
+      updateDevice: (query, body, accessToken) =>
+        requestJson(
+          `/api/devices?d=${encodeURIComponent(query.name)}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          },
+          UpdateDeviceResponseSchema,
+          accessToken,
+        ),
       deleteDevice: (name, accessToken) =>
         requestJson(
-          `/api/devices?name=${encodeURIComponent(name)}`,
+          `/api/devices?d=${encodeURIComponent(name)}`,
           { method: "DELETE" },
           DeleteOkSchema,
           accessToken,
         ).pipe(Effect.map(() => undefined)),
       deleteIslet: (device, path, accessToken) =>
         requestJson(
-          `/api/islets?device=${encodeURIComponent(device)}&path=${encodeURIComponent(path)}`,
+          `/api/islets?d=${encodeURIComponent(device)}&n=${encodeURIComponent(path)}`,
           { method: "DELETE" },
           DeleteOkSchema,
           accessToken,
         ).pipe(Effect.map(() => undefined)),
+      updateIslet: (query, body, accessToken) =>
+        requestJson(
+          `/api/islets?d=${encodeURIComponent(query.device)}&n=${encodeURIComponent(query.name)}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          },
+          UpdateIsletResponseSchema,
+          accessToken,
+        ),
       uploadMissingFile: (uploadUrl, content, size) =>
         Effect.tryPromise({
           try: async () => {

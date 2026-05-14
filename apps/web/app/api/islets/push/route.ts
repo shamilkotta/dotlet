@@ -11,8 +11,6 @@ import { devices, isletRevisions, islets } from "@/lib/db/schema";
 import { resolveMissingFileUploads } from "./integrity";
 import { getStorageProvider } from "@/lib/storage/provider";
 
-export const dynamic = "force-dynamic";
-
 const MAX_CONTENT_BYTES = 1024 * 1024; // TODO: update max size
 const MAX_FILES_PER_PUSH = 512;
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
