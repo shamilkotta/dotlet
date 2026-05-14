@@ -1,6 +1,25 @@
 import { cn } from "@workspace/ui/lib/utils";
+import Link from "next/link";
 
-const LINKS = ["GITHUB", "CHANGELOG", "PRIVACY", "TERMS"] as const;
+const LINKS = [
+  {
+    label: "GITHUB",
+    href: "https://github.com/shamilkotta/dotlet",
+    target: "_blank",
+  },
+  {
+    label: "CHANGELOG",
+    href: "https://github.com/shamilkotta/dotlet/blob/main/CHANGELOG.md",
+  },
+  {
+    label: "PRIVACY",
+    href: "#",
+  },
+  {
+    label: "TERMS",
+    href: "#",
+  },
+];
 
 export function LandingFooter({ className }: { className?: string }) {
   return (
@@ -15,14 +34,17 @@ export function LandingFooter({ className }: { className?: string }) {
         <div>LICENSED_UNDER_MIT</div>
       </div>
       <div className="flex gap-8 text-[10px] uppercase tracking-widest">
-        {LINKS.map((label) => (
-          <a
+        {LINKS.map(({ label, href, target }) => (
+          <Link
             key={label}
             className="text-muted-foreground underline underline-offset-4 decoration-border transition-colors hover:text-foreground"
-            href="#"
+            href={href}
+            rel="noopener noreferrer"
+            prefetch={false}
+            target={target}
           >
             {label}
-          </a>
+          </Link>
         ))}
       </div>
     </footer>

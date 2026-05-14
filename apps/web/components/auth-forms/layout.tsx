@@ -17,7 +17,7 @@ export function AuthFormLayout({ title, description, children, footerLink }: Aut
         className="fixed left-4 sm:left-6 top-[17px] z-60 flex items-center group"
         style={{ left: "max(16px, calc((100vw - 1400px) / 2 + 16px))" }}
       >
-        <AppLogo className="" imgClassName="w-5 h-5" />
+        <AppLogo imgClassName="h-6 w-6" />
       </Link>
 
       <div className="w-full max-w-[400px] space-y-8">

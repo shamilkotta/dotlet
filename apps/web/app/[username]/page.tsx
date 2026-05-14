@@ -12,6 +12,7 @@ import { user } from "@/lib/db/schema";
 import { AuthHeader } from "@/components/auth-header";
 import { DeviceListSkeleton, DevicesList } from "@/components/user/devices";
 import { UserOverview, UserOverviewSkeleton } from "@/components/user/overview";
+import { AppLogo } from "@/components/app-logo";
 
 export async function generateMetadata({
   params,
@@ -58,7 +59,7 @@ export default async function UserHomePage({ params }: { params: Promise<{ usern
             className="font-mono text-sm tracking-tight text-[#57606a] transition-colors hover:text-[#1f2328] dark:text-[#919191] dark:hover:text-white"
             href="/"
           >
-            dotlet
+            <AppLogo imgClassName="h-5 w-5" />
           </Link>
           <span className="text-[#e1e4e8] dark:text-[#2a2a2a]">/</span>
           <span className="font-mono text-sm font-semibold text-[#1f2328] dark:text-white">

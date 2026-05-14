@@ -8,26 +8,17 @@ type AppLogoProps = {
   alt?: string;
 };
 
-export function AppLogo({ className, imgClassName, alt = "dotlet logo" }: AppLogoProps) {
+export function AppLogo({ className, imgClassName, alt = "dotlet" }: AppLogoProps) {
   return (
-    <span className={cn("inline-flex items-center justify-center", className)}>
-      {/* <Image
-        src="/logo-light.svg"
+    <span className={cn("inline-flex items-center justify-center text-foreground", className)}>
+      <Image
+        src="/logo.svg"
         alt={alt}
-        width={104}
-        height={104}
-        className={cn("dark:hidden object-contain", imgClassName)}
+        width={1024}
+        height={1024}
+        className={cn("object-contain dark:invert", imgClassName)}
         unoptimized
       />
-      <Image
-        src="/logo-dark.svg"
-        alt={alt}
-        width={104}
-        height={104}
-        className={cn("hidden dark:block object-contain", imgClassName)}
-        unoptimized
-      /> */}
-      <h1 className="text-2xl font-bold">dotlet</h1>
     </span>
   );
 }
