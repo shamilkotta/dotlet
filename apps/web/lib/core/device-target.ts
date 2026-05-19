@@ -1,22 +1,30 @@
-import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, USERNAME_REGEX } from "@/lib/core/username";
+import {
+  DEVICE_NAME_MAX_LENGTH,
+  DEVICE_NAME_MIN_LENGTH,
+  DEVICE_NAME_REGEX,
+  isValidUsername,
+  isValidDeviceName,
+  normalizeUsername,
+} from "@/lib/core/username";
 
 export type DeviceTarget = {
   username: string | null;
   device: string;
 };
 
-function validateNameSegment(value: string, label: string): string {
-  const normalized = value.trim();
-  if (!normalized) {
-    throw new Error(`${label} is required`);
+function validateDeviceSegment(value: string): string {
+  const normalized = normalizeUsername(value.trim());
+  if (!normalized || !isValidDeviceName(normalized)) {
+    throw new Error("Invalid device");
   }
 
-  if (
-    normalized.length < USERNAME_MIN_LENGTH ||
-    normalized.length > USERNAME_MAX_LENGTH ||
-    !USERNAME_REGEX.test(normalized)
-  ) {
-    throw new Error(`Invalid ${label.toLowerCase()}`);
+  return normalized;
+}
+
+function validateUsernameSegment(value: string): string {
+  const normalized = normalizeUsername(value.trim());
+  if (!normalized || !isValidUsername(normalized)) {
+    throw new Error("Invalid username");
   }
 
   return normalized;
@@ -35,14 +43,14 @@ export function parseOptionalDeviceTarget(rawTarget: string | null): DeviceTarge
   if (parts.length === 1) {
     return {
       username: null,
-      device: validateNameSegment(parts[0] ?? "", "Device"),
+      device: validateDeviceSegment(parts[0] ?? ""),
     };
   }
 
   if (parts.length === 2) {
     return {
-      username: validateNameSegment(parts[0] ?? "", "Username"),
-      device: validateNameSegment(parts[1] ?? "", "Device"),
+      username: validateUsernameSegment(parts[0] ?? ""),
+      device: validateDeviceSegment(parts[1] ?? ""),
     };
   }
 

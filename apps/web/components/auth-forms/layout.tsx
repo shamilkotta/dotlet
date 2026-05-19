@@ -6,7 +6,7 @@ type AuthFormLayoutProps = {
   title: string;
   description: string;
   children: React.ReactNode;
-  footerLink: { href: string; label: string; linkText: string };
+  footerLink?: { href: string; label: string; linkText: string };
 };
 
 export function AuthFormLayout({ title, description, children, footerLink }: AuthFormLayoutProps) {
@@ -28,15 +28,17 @@ export function AuthFormLayout({ title, description, children, footerLink }: Aut
 
         {children}
 
-        <p className="text-center text-sm text-muted-foreground">
-          {footerLink.label}{" "}
-          <Link
-            href={footerLink.href}
-            className="font-medium text-primary hover:underline underline-offset-4"
-          >
-            {footerLink.linkText}
-          </Link>
-        </p>
+        {footerLink ? (
+          <p className="text-center text-sm text-muted-foreground">
+            {footerLink.label}{" "}
+            <Link
+              href={footerLink.href}
+              className="font-medium text-primary hover:underline underline-offset-4"
+            >
+              {footerLink.linkText}
+            </Link>
+          </p>
+        ) : null}
       </div>
     </div>
   );

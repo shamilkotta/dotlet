@@ -5,19 +5,19 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { badRequest, ok, unauthorized } from "@/lib/core/http";
 import {
-  USERNAME_MAX_LENGTH,
-  USERNAME_MIN_LENGTH,
-  USERNAME_REGEX,
-  isValidUsername,
+  DEVICE_NAME_MAX_LENGTH,
+  DEVICE_NAME_MIN_LENGTH,
+  DEVICE_NAME_REGEX,
+  isValidDeviceName,
 } from "@/lib/core/username";
 import { devices, user, visibilityEnum } from "@/lib/db/schema";
 
 const DeviceNameSchema = z
   .string()
-  .min(USERNAME_MIN_LENGTH)
-  .max(USERNAME_MAX_LENGTH)
-  .regex(USERNAME_REGEX)
-  .refine((value) => isValidUsername(value), { message: "Invalid device name" });
+  .min(DEVICE_NAME_MIN_LENGTH)
+  .max(DEVICE_NAME_MAX_LENGTH)
+  .regex(DEVICE_NAME_REGEX)
+  .refine((value) => isValidDeviceName(value), { message: "Invalid device name" });
 
 const VisibilitySchema = z.enum(visibilityEnum.enumValues);
 

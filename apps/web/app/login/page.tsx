@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import { LoginForm } from "@/components/auth-forms/login";
+import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Sign in to your account | dotlet",
@@ -10,10 +13,17 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect?: string; verified?: string }>;
+  searchParams: Promise<{ redirect?: string }>;
 }) {
-  const params = await searchParams;
-  const emailJustVerified = params.verified === "1";
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  return <LoginForm redirectTo={params.redirect} emailJustVerified={emailJustVerified} />;
+  if (session) {
+    redirect(`/${session.user.username}`);
+  }
+
+  const params = await searchParams;
+
+  return <LoginForm redirectTo={params.redirect} />;
 }

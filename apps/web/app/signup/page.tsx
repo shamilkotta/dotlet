@@ -1,11 +1,4 @@
-import type { Metadata } from "next";
-
-import { SignupForm } from "@/components/auth-forms/signup";
-
-export const metadata: Metadata = {
-  title: "Create an account | dotlet",
-  description: "Create a dotlet account and start syncing your configs.",
-};
+import { redirect } from "next/navigation";
 
 export default async function SignupPage({
   searchParams,
@@ -13,6 +6,7 @@ export default async function SignupPage({
   searchParams: Promise<{ redirect?: string }>;
 }) {
   const params = await searchParams;
+  const redirectParam = params.redirect ? `?redirect=${encodeURIComponent(params.redirect)}` : "";
 
-  return <SignupForm redirectTo={params.redirect} />;
+  redirect(`/login${redirectParam}`);
 }

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@workspace/ui/components/button";
@@ -77,6 +77,12 @@ export function AuthHeaderMenu({ user }: { user: AuthHeaderUser }) {
             <Link href={profileHref}>
               <User />
               {user.username ? "Profile" : "Home"}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/settings">
+              <Settings />
+              Settings
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>

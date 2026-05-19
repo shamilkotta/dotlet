@@ -4,10 +4,11 @@ import { bearer } from "better-auth/plugins/bearer";
 import { deviceAuthorization } from "better-auth/plugins/device-authorization";
 import { username } from "better-auth/plugins/username";
 import { nextCookies } from "better-auth/next-js";
+
 import { isValidUsername } from "./core/username";
 import { db } from "./db/client";
 import { account, deviceCode, rateLimit, session, user, verification } from "./db/schema";
-import { sendPasswordResetEmailMessage, sendVerificationEmailMessage } from "./email/auth-mail";
+import { allocateUniqueUsername, mapGithubProfileToUser } from "./auth/github-username";
 
 export const auth = betterAuth({
   appName: "dotlet",
@@ -16,17 +17,6 @@ export const auth = betterAuth({
   rateLimit: {
     enabled: true,
     storage: "database",
-  },
-  emailVerification: {
-    sendOnSignIn: true,
-    autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      sendVerificationEmailMessage({
-        to: user.email,
-        displayName: user.name,
-        verifyUrl: url,
-      });
-    },
   },
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -40,20 +30,20 @@ export const auth = betterAuth({
     },
   }),
   emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
-    sendResetPassword: async ({ user, url }) => {
-      sendPasswordResetEmailMessage({
-        to: user.email,
-        displayName: user.name,
-        resetUrl: url,
-      });
+    enabled: false,
+  },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      scope: ["read:user", "user:email"],
+      mapProfileToUser: (profile) => mapGithubProfileToUser(profile),
     },
   },
   plugins: [
     username({
-      maxUsernameLength: 16,
-      minUsernameLength: 3,
+      minUsernameLength: 1,
+      maxUsernameLength: 255,
       usernameValidator: isValidUsername,
     }),
     deviceAuthorization({
@@ -64,19 +54,28 @@ export const auth = betterAuth({
     nextCookies(),
   ],
   databaseHooks: {
-    // user: {
-    //   create: {
-    //     after: async (createdUser) => {
-    //       if (!createdUser?.id) {
-    //         return;
-    //       }
-    //       await db.insert(devices).values({
-    //         userId: createdUser.id,
-    //         name: "personal",
-    //       });
-    //     },
-    //   },
-    // },
+    user: {
+      create: {
+        before: async (createdUser) => {
+          const usernameValue = createdUser.username as string;
+          if (!usernameValue) {
+            return { data: createdUser };
+          }
+
+          const uniqueUsername = await allocateUniqueUsername(usernameValue, createdUser.email);
+          if (uniqueUsername === usernameValue) {
+            return { data: createdUser };
+          }
+
+          return {
+            data: {
+              ...createdUser,
+              username: uniqueUsername,
+            },
+          };
+        },
+      },
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30,
