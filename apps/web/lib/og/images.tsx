@@ -508,7 +508,7 @@ export async function renderIsletOgImage(input: {
   path: string;
   revisionId: string;
   starCount: number;
-  updatedAt: Date;
+  updatedAt: Date | string;
 }) {
   const logoSrc = await getLogoDataUri();
   const fileName = input.path.split("/").pop() || input.path;

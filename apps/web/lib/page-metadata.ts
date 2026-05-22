@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
 import { getDeviceOgData, getIsletOgData, getProfileOgData } from "@/lib/og/queries";
-import { buildIsletPagePath, createPageMetadata } from "@/lib/metadata";
+import { buildIsletOgImagePath, buildIsletPagePath, createPageMetadata } from "@/lib/metadata";
 import { splitDirAndFile } from "@/lib/core/path";
 
 export async function getViewerUserId(): Promise<string | null> {
@@ -81,12 +81,14 @@ export async function createIsletMetadata(
   const viewerId = await getViewerUserId();
   const data = await getIsletOgData(username, deviceName, isletPath, revisionId);
   const pagePath = buildIsletPagePath(username, deviceName, isletPath, revisionId);
+  const ogImagePath = buildIsletOgImagePath(username, deviceName, isletPath, revisionId);
 
   if (!data) {
     return createPageMetadata({
       title: "Islet not found",
       description: "This dotlet islet could not be found.",
       path: pagePath,
+      ogImagePath,
       noIndex: true,
     });
   }
@@ -99,6 +101,7 @@ export async function createIsletMetadata(
         title: "Private islet",
         description: "This dotlet islet is not publicly visible.",
         path: pagePath,
+        ogImagePath,
         noIndex: true,
       });
     }
@@ -111,6 +114,7 @@ export async function createIsletMetadata(
     title,
     description: `View ${data.path} on ${username}/${deviceName}. ${data.languageLabel} config with revision ${data.revisionId.slice(0, 7)}.`,
     path: pagePath,
+    ogImagePath,
   });
 }
 
@@ -122,12 +126,14 @@ export async function createIsletHistoryMetadata(
   const viewerId = await getViewerUserId();
   const data = await getIsletOgData(username, deviceName, isletPath);
   const pagePath = `/${username}/${deviceName}/islet/history?n=${encodeURIComponent(isletPath)}`;
+  const ogImagePath = buildIsletOgImagePath(username, deviceName, isletPath);
 
   if (!data) {
     return createPageMetadata({
       title: "Islet history",
       description: "Revision history for a dotlet islet.",
       path: pagePath,
+      ogImagePath,
       noIndex: true,
     });
   }
@@ -140,6 +146,7 @@ export async function createIsletHistoryMetadata(
         title: "Private islet history",
         description: "This dotlet islet history is not publicly visible.",
         path: pagePath,
+        ogImagePath,
         noIndex: true,
       });
     }
@@ -152,5 +159,6 @@ export async function createIsletHistoryMetadata(
     title: `${username}/${deviceName}/${label}`,
     description: `Revision history for ${data.path} on ${username}/${deviceName}.`,
     path: pagePath,
+    ogImagePath,
   });
 }

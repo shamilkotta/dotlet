@@ -15,6 +15,7 @@ type PageMetadataInput = {
   description?: string;
   path?: string;
   noIndex?: boolean;
+  ogImagePath?: string;
 };
 
 export function createPageMetadata({
@@ -22,9 +23,11 @@ export function createPageMetadata({
   description = DEFAULT_DESCRIPTION,
   path,
   noIndex = false,
+  ogImagePath,
 }: PageMetadataInput): Metadata {
   const siteUrl = getSiteUrl();
   const pageUrl = path ? new URL(path, siteUrl) : siteUrl;
+  const imageUrl = ogImagePath ? new URL(ogImagePath, siteUrl) : null;
 
   return {
     title,
@@ -42,13 +45,39 @@ export function createPageMetadata({
       title,
       description,
       url: pageUrl.toString(),
+      ...(imageUrl
+        ? {
+            images: [
+              {
+                url: imageUrl.toString(),
+                width: 1200,
+                height: 630,
+                alt: title,
+              },
+            ],
+          }
+        : {}),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      ...(imageUrl ? { images: [imageUrl.toString()] } : {}),
     },
   };
+}
+
+export function buildIsletOgImagePath(
+  username: string,
+  device: string,
+  isletPath: string,
+  revisionId?: string,
+): string {
+  const searchParams = new URLSearchParams({ n: isletPath });
+  if (revisionId?.trim()) {
+    searchParams.set("v", revisionId.trim());
+  }
+  return `/api/og/islet/${username}/${device}?${searchParams.toString()}`;
 }
 
 export function buildIsletPagePath(
