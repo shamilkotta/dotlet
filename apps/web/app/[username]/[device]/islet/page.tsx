@@ -228,7 +228,7 @@ export default async function IsletPage({
               </div>
             </div>
           </div>
-          <div className="flex  items-center gap-2 md:gap-3 md:justify-end">
+          <div className="flex items-center gap-2 md:justify-end">
             <Suspense fallback={<IsletStarButtonPlaceholder />}>
               <IsletStarButton
                 isletId={isletRow.id}

@@ -7,6 +7,7 @@ const cliVersion = JSON.parse(readFileSync(join(process.cwd(), "../cli/package.j
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
+  devIndicators: false,
   env: {
     NEXT_PUBLIC_DOTLET_CLI_VERSION: cliVersion,
   },

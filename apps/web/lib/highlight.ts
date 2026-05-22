@@ -1,7 +1,7 @@
 import { createHighlighter } from "shiki";
 
-const LIGHT_THEME = "github-light";
-const DARK_THEME = "github-dark";
+const LIGHT_THEME = "catppuccin-latte";
+const DARK_THEME = "tokyo-night";
 
 let highlighterPromise: ReturnType<typeof createHighlighter> | null = null;
 
@@ -30,7 +30,7 @@ function wrapPlainLines(code: string): string {
       return `<span class="line">${escaped}</span>`;
     })
     .join("");
-  return `<pre class="shiki github-dark"><code>${wrappedLines}</code></pre>`;
+  return `<pre class="shiki ${DARK_THEME}"><code>${wrappedLines}</code></pre>`;
 }
 
 function postProcessShikiHtml(html: string): string {

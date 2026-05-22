@@ -9,12 +9,14 @@ import { toast } from "@workspace/ui/components/sonner";
 import { starIslet, unstarIslet } from "@/lib/actions/islet-star";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-const controlBase =
-  "inline-flex items-center gap-2 rounded-lg border border-[#e1e4e8] bg-white px-3 py-2 text-sm font-medium text-[#1f2328] shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-[#2a2a2a] dark:bg-neutral-900 dark:text-[#ededed] dark:hover:bg-neutral-800";
+const actionButtonClass =
+  "inline-flex items-center rounded border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 no-underline transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-transparent dark:hover:bg-zinc-800 dark:hover:text-white dark:hover:ring-1 dark:hover:ring-white/10";
+
+const actionButtonIconClass = "mr-2 size-4 shrink-0";
 
 export function IsletStarButtonPlaceholder() {
   return (
-    <div className={`${controlBase}`}>
+    <div className={`${actionButtonClass} pointer-events-none`}>
       <Skeleton className="size-4 shrink-0 rounded-sm" />
       <Skeleton className="h-4 w-8 rounded-sm" />
     </div>
@@ -77,16 +79,8 @@ export function IsletStarButton({
 
   if (!isLoggedIn) {
     return (
-      <Link
-        href={loginHref}
-        className={`${controlBase} no-underline`}
-        aria-label="Sign in to star this islet"
-      >
-        <Star
-          className="size-4 shrink-0 text-[#57606a] dark:text-[#919191]"
-          strokeWidth={1.75}
-          aria-hidden
-        />
+      <Link href={loginHref} className={actionButtonClass} aria-label="Sign in to star this islet">
+        <Star className={actionButtonIconClass} strokeWidth={1.75} aria-hidden />
         <span className="tabular-nums">{starCount}</span>
       </Link>
     );
@@ -95,14 +89,14 @@ export function IsletStarButton({
   return (
     <button
       type="button"
-      className={`${controlBase} ${pending ? "opacity-70" : "cursor-pointer"}`}
+      className={`${actionButtonClass} ${pending ? "opacity-70" : "cursor-pointer"}`}
       disabled={pending}
       onClick={onToggle}
       aria-pressed={starred}
       aria-label={starred ? "Unstar this islet" : "Star this islet"}
     >
       <Star
-        className={`size-4 shrink-0 ${starred ? "fill-amber-400 text-amber-500" : "text-[#57606a] dark:text-[#919191]"}`}
+        className={`${actionButtonIconClass} ${starred ? "fill-amber-400 text-amber-500" : ""}`}
         strokeWidth={starred ? 0 : 1.75}
         aria-hidden
       />
