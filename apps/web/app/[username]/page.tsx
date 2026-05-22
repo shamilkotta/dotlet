@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import type { Metadata } from "next";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -9,22 +8,15 @@ import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { user } from "@/lib/db/schema";
+import { createProfileMetadata } from "@/lib/page-metadata";
 import { AuthHeader } from "@/components/auth-header";
 import { DeviceListSkeleton, DevicesList } from "@/components/user/devices";
 import { UserOverview, UserOverviewSkeleton } from "@/components/user/overview";
 import { AppLogo } from "@/components/app-logo";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
-
-  return {
-    title: `${username} | dotlet`,
-    description: `Devices and profile for @${username}.`,
-  };
+  return createProfileMetadata(username);
 }
 
 export default async function UserHomePage({ params }: { params: Promise<{ username: string }> }) {

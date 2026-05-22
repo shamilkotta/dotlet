@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import type { Metadata } from "next";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -9,6 +8,7 @@ import { AuthHeader } from "@/components/auth-header";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { devices, user } from "@/lib/db/schema";
+import { createDeviceMetadata } from "@/lib/page-metadata";
 import { IsletsList, IsletsListSkeleton } from "@/components/device/islets";
 import {
   DeviceInfo,
@@ -23,12 +23,9 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ username: string; device: string }>;
-}): Promise<Metadata> {
+}) {
   const { device, username } = await params;
-  return {
-    title: `${username}/${device} | dotlet`,
-    description: "Browse islets for this device.",
-  };
+  return createDeviceMetadata(username, device);
 }
 
 export default async function DevicePage({

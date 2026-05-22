@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 
@@ -12,10 +11,13 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "700"],
 });
 
-export const metadata: Metadata = {
+import { createPageMetadata } from "@/lib/metadata";
+
+export const metadata = createPageMetadata({
   title: "dotlet",
   description: "Keep your dotfiles consistent everywhere with versioned backups",
-};
+  path: "/",
+});
 
 export default function Home() {
   return (

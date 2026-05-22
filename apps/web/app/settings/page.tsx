@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -6,11 +5,14 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { AppLogo } from "@/components/app-logo";
 import { UsernameForm } from "@/components/settings/username-form";
+import { createPageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Account settings | dotlet",
+export const metadata = createPageMetadata({
+  title: "Account settings",
   description: "Manage your dotlet account settings.",
-};
+  path: "/settings",
+  noIndex: true,
+});
 
 export default async function SettingsPage() {
   const session = await auth.api.getSession({

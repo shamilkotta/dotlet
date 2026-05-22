@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 
@@ -13,10 +12,14 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "docs | dotlet",
-  description: "Complete documentation for the dotlet",
-};
+import { createPageMetadata } from "@/lib/metadata";
+
+export const metadata = createPageMetadata({
+  title: "docs",
+  description:
+    "Complete CLI documentation for dotlet — install, login, push, pull, and manage devices.",
+  path: "/docs",
+});
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (

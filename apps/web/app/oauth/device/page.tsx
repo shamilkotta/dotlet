@@ -4,6 +4,14 @@ import { redirect } from "next/navigation";
 import { OauthDeviceFlow } from "@/components/oauth-device-flow";
 import { auth } from "@/lib/auth";
 import { AuthHeader } from "@/components/auth-header";
+import { createPageMetadata } from "@/lib/metadata";
+
+export const metadata = createPageMetadata({
+  title: "Authorize CLI",
+  description: "Approve dotlet CLI access for your account.",
+  path: "/oauth/device",
+  noIndex: true,
+});
 
 function normalizeUserCode(value: string | undefined): string | undefined {
   if (!value) {

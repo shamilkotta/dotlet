@@ -3,7 +3,6 @@ import Link from "next/link";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import type { Metadata } from "next";
 import { FolderOpen } from "lucide-react";
 
 import { buildIsletViewHref } from "@/lib/core/islet-link";
@@ -12,6 +11,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { devices, islets, user } from "@/lib/db/schema";
 import { getIsletStarState } from "@/lib/core/islet-stars";
+import { createIsletHistoryMetadata } from "@/lib/page-metadata";
 import { IsletHistory, IsletHistorySkeleton } from "@/components/islet/history";
 import { AuthHeader } from "@/components/auth-header";
 import { IsletStarButton, IsletStarButtonPlaceholder } from "@/components/device/islet-star-button";
@@ -22,15 +22,15 @@ export async function generateMetadata({
 }: {
   params: Promise<{ username: string; device: string }>;
   searchParams: Promise<{ n?: string }>;
-}): Promise<Metadata> {
-  void params;
+}) {
+  const { username, device } = await params;
   const { n } = await searchParams;
-  const { fileName: displayName } = splitDirAndFile(n ?? "");
-  const label = displayName ? `${displayName} history` : "Islet history";
-  return {
-    title: `${label} | dotlet`,
-    description: "View islet revision history.",
-  };
+
+  if (!n?.trim()) {
+    return createIsletHistoryMetadata(username, device, "");
+  }
+
+  return createIsletHistoryMetadata(username, device, n.trim());
 }
 
 export default async function IsletHistoryPage({

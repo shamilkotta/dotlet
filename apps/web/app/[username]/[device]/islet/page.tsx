@@ -4,7 +4,6 @@ import { and, eq } from "drizzle-orm";
 import { FolderOpen, Lock } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import type { Metadata } from "next";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
@@ -13,6 +12,7 @@ import { getIsletStarState } from "@/lib/core/islet-stars";
 import { getLanguageFromPath, getLanguageLabel, MAX_INLINE_FILE_SIZE_BYTES } from "@/lib/file";
 import { highlightCode } from "@/lib/highlight";
 import { getStorageProvider } from "@/lib/storage/provider";
+import { createDeviceMetadata, createIsletMetadata } from "@/lib/page-metadata";
 import {
   IsletCodeViewer,
   IsletCodeViewerSkeleton,
@@ -28,16 +28,20 @@ import { CopyIsletNameButton } from "@/components/copy-islet-name-button";
 import { IsletStarButton, IsletStarButtonPlaceholder } from "@/components/device/islet-star-button";
 
 export async function generateMetadata({
+  params,
   searchParams,
 }: {
+  params: Promise<{ username: string; device: string }>;
   searchParams: Promise<{ n?: string; v?: string }>;
-}): Promise<Metadata> {
-  const { n: name } = await searchParams;
-  const { fileName: displayName } = splitDirAndFile(name ?? "");
-  return {
-    title: `${displayName} | dotlet`,
-    description: "View islet content and revision history.",
-  };
+}) {
+  const { username, device } = await params;
+  const { n, v } = await searchParams;
+
+  if (!n?.trim()) {
+    return createDeviceMetadata(username, device);
+  }
+
+  return createIsletMetadata(username, device, n.trim(), v);
 }
 
 const getContent = cache(async (storageKey: string, path: string) => {
