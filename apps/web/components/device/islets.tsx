@@ -1,9 +1,6 @@
-import { and, desc, eq } from "drizzle-orm";
 import { ChevronRight, Lock } from "lucide-react";
-import { db } from "@/lib/db/client";
 import Link from "next/link";
 
-import { islets, isletRevisions } from "@/lib/db/schema";
 import { formatRelativeTimeVerbose } from "@/lib/format-relative-time";
 import { CopyIsletNameButton } from "@/components/copy-islet-name-button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
@@ -11,7 +8,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { buildIsletViewHref } from "@/lib/core/islet-link";
 import { splitDirAndFile, stripLeadingSlashes } from "@/lib/core/path";
 
-type IsletRecord = {
+export type IsletRecord = {
   path: string;
   message: string | null;
   updatedAt: Date;
@@ -33,10 +30,6 @@ function getMaxUpdatedAt(records: IsletRecord[]): Date {
     (acc, r) => (r.updatedAt.getTime() > acc.getTime() ? r.updatedAt : acc),
     records[0]!.updatedAt,
   );
-}
-
-function deviceVisibilityWhere(canViewPrivate: boolean) {
-  return canViewPrivate ? [] : [eq(islets.visibility, "public")];
 }
 
 function sortByUpdatedAtDescThenPath(a: IsletRecord, b: IsletRecord) {
@@ -93,7 +86,7 @@ function groupByDirectory(records: IsletRecord[]): IsletTreeItem[] {
 
 export async function IsletsList({
   target,
-  canViewPrivate,
+  records,
 }: {
   target: {
     userId: string;
@@ -102,26 +95,8 @@ export async function IsletsList({
     deviceId: string;
     deviceName: string;
   };
-  canViewPrivate: boolean;
+  records: IsletRecord[];
 }) {
-  const baseIsletFilter = and(
-    eq(islets.deviceId, target.deviceId),
-    ...deviceVisibilityWhere(canViewPrivate),
-  );
-
-  const records = (await db
-    .select({
-      path: islets.path,
-      message: isletRevisions.message,
-      updatedAt: islets.updatedAt,
-      revisionId: islets.currentRevisionId,
-      visibility: islets.visibility,
-    })
-    .from(islets)
-    .leftJoin(isletRevisions, eq(islets.currentRevisionId, isletRevisions.id))
-    .where(baseIsletFilter)
-    .orderBy(desc(islets.updatedAt))) as IsletRecord[];
-
   const treeItems = groupByDirectory(records);
   // const fileCount = Number(fileCountRow?.c ?? 0);
   const firstGroupIndex = treeItems.findIndex((t) => t.kind === "group");

@@ -33,49 +33,23 @@ export function decideRateLimit(
 export async function checkRateLimit(key: string, max: number, windowMs: number): Promise<boolean> {
   const nowMs = Date.now();
 
-  return db.transaction(async (tx) => {
-    const inserted = await tx.execute<{ key: string }>(
-      sql`
-        INSERT INTO "rate_limit" ("id", "key", "count", "last_request")
-        VALUES (gen_random_uuid(), ${key}, 1, ${nowMs})
-        ON CONFLICT ("key") DO NOTHING
-        RETURNING "key"
-      `,
-    );
+  const result = await db.execute<{ allowed: boolean }>(sql`
+    INSERT INTO "rate_limit" ("id", "key", "count", "last_request")
+    VALUES (gen_random_uuid(), ${key}, 1, ${nowMs})
+    ON CONFLICT ("key") DO UPDATE
+    SET
+      "count" = CASE
+        WHEN ${nowMs} - "rate_limit"."last_request" > ${windowMs} THEN 1
+        WHEN "rate_limit"."count" >= ${max} THEN "rate_limit"."count"
+        ELSE "rate_limit"."count" + 1
+      END,
+      "last_request" = CASE
+        WHEN ${nowMs} - "rate_limit"."last_request" > ${windowMs} THEN ${nowMs}
+        WHEN "rate_limit"."count" >= ${max} THEN "rate_limit"."last_request"
+        ELSE ${nowMs}
+      END
+    RETURNING "last_request" = ${nowMs} AS "allowed"
+  `);
 
-    if (inserted.rows.length > 0) {
-      return true;
-    }
-
-    const result = await tx.execute<{ count: number; last_request: string | number }>(
-      sql`SELECT "count", "last_request" FROM "rate_limit" WHERE "key" = ${key} FOR UPDATE`,
-    );
-
-    const existingRow = result.rows[0];
-    const lastRequest = existingRow ? Number(existingRow.last_request) : nowMs;
-    const decision = decideRateLimit(
-      existingRow
-        ? {
-            count: Number(existingRow.count),
-            lastRequest,
-          }
-        : null,
-      max,
-      windowMs,
-      nowMs,
-    );
-
-    await tx.execute(
-      sql`
-        INSERT INTO "rate_limit" ("id", "key", "count", "last_request")
-        VALUES (gen_random_uuid(), ${key}, ${decision.count}, ${decision.lastRequest})
-        ON CONFLICT ("key") DO UPDATE
-        SET
-          "count" = EXCLUDED."count",
-          "last_request" = EXCLUDED."last_request"
-      `,
-    );
-
-    return decision.allowed;
-  });
+  return Boolean(result.rows[0]?.allowed);
 }

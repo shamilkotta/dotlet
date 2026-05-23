@@ -28,24 +28,14 @@ import { getStorageProvider } from "@/lib/storage/provider";
 import { GET } from "./route";
 
 function deviceSelectChain<T>(rows: T[]) {
-  return {
-    from: () => ({
-      innerJoin: () => ({
-        where: () => ({
-          limit: () => Promise.resolve(rows),
-        }),
-      }),
+  const chain = {
+    innerJoin: () => chain,
+    where: () => ({
+      limit: () => Promise.resolve(rows),
     }),
   };
-}
-
-function limitedSelectChain<T>(rows: T[]) {
   return {
-    from: () => ({
-      where: () => ({
-        limit: () => Promise.resolve(rows),
-      }),
-    }),
+    from: () => chain,
   };
 }
 
@@ -65,24 +55,11 @@ describe("GET /api/islets/download", () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
     const target = {
-      userId: "u1",
-      username: "alice",
-      deviceId: "d1",
-      deviceName: "laptop",
-      visibility: "public" as const,
+      isletPath: "cfg/init.lua",
+      storageKey: "sk1",
     };
-    const islet = {
-      id: "i1",
-      path: "cfg/init.lua",
-      visibility: "public" as const,
-      currentRevisionId: "rev-current",
-    };
-    const revision = { id: "rev-current", storageKey: "sk1" };
 
-    vi.mocked(db.select)
-      .mockReturnValueOnce(deviceSelectChain([target]) as never)
-      .mockReturnValueOnce(limitedSelectChain([islet]) as never)
-      .mockReturnValueOnce(limitedSelectChain([revision]) as never);
+    vi.mocked(db.select).mockReturnValueOnce(deviceSelectChain([target]) as never);
 
     const presignGetUrl = vi.fn(async () => "https://storage.example.com/obj");
     vi.mocked(getStorageProvider).mockReturnValue({ presignGetUrl } as never);
@@ -104,15 +81,7 @@ describe("GET /api/islets/download", () => {
   it("returns 404 for a private device when unauthenticated", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
-    const target = {
-      userId: "u1",
-      username: "alice",
-      deviceId: "d1",
-      deviceName: "laptop",
-      visibility: "private" as const,
-    };
-
-    vi.mocked(db.select).mockReturnValueOnce(deviceSelectChain([target]) as never);
+    vi.mocked(db.select).mockReturnValueOnce(deviceSelectChain([]) as never);
 
     const res = await GET(
       new Request("http://localhost/api/islets/download?device=alice/laptop&n=cfg/init.lua"),
@@ -127,23 +96,7 @@ describe("GET /api/islets/download", () => {
       user: { id: "other" },
     } as never);
 
-    const target = {
-      userId: "u1",
-      username: "alice",
-      deviceId: "d1",
-      deviceName: "laptop",
-      visibility: "public" as const,
-    };
-    const islet = {
-      id: "i1",
-      path: "secret",
-      visibility: "private" as const,
-      currentRevisionId: "rev-current",
-    };
-
-    vi.mocked(db.select)
-      .mockReturnValueOnce(deviceSelectChain([target]) as never)
-      .mockReturnValueOnce(limitedSelectChain([islet]) as never);
+    vi.mocked(db.select).mockReturnValueOnce(deviceSelectChain([]) as never);
 
     const res = await GET(
       new Request("http://localhost/api/islets/download?device=alice/laptop&n=secret"),

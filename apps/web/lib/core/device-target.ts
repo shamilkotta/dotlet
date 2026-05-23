@@ -1,11 +1,4 @@
-import {
-  DEVICE_NAME_MAX_LENGTH,
-  DEVICE_NAME_MIN_LENGTH,
-  DEVICE_NAME_REGEX,
-  isValidUsername,
-  isValidDeviceName,
-  normalizeUsername,
-} from "@/lib/core/username";
+import { isValidUsername, isValidDeviceName, normalizeUsername } from "@/lib/core/username";
 
 export type DeviceTarget = {
   username: string | null;
