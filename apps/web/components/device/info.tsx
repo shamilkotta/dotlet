@@ -1,46 +1,13 @@
-import { count, max, eq, and } from "drizzle-orm";
-
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { db } from "@/lib/db/client";
-import { islets, isletRevisions } from "@/lib/db/schema";
 import { formatSinceSyncAbbrev } from "@/lib/format-relative-time";
 
-function deviceVisibilityWhere(canViewPrivate: boolean) {
-  return canViewPrivate ? [] : [eq(islets.visibility, "public")];
-}
 export async function DeviceInfo({
-  target,
-  canViewPrivate,
+  commitCount,
+  fileCount,
 }: {
-  target: {
-    userId: string;
-    username: string | null;
-    userImage: string | null;
-    deviceId: string;
-    deviceName: string;
-  };
-  canViewPrivate: boolean;
+  commitCount: number;
+  fileCount: number;
 }) {
-  const baseIsletFilter = and(
-    eq(islets.deviceId, target.deviceId),
-    ...deviceVisibilityWhere(canViewPrivate),
-  );
-
-  const [[commitCountRow], [fileCountRow]] = await Promise.all([
-    db
-      .select({ c: count(isletRevisions.id) })
-      .from(isletRevisions)
-      .innerJoin(islets, eq(isletRevisions.isletId, islets.id))
-      .where(baseIsletFilter),
-    db
-      .select({ c: count(islets.id) })
-      .from(islets)
-      .where(baseIsletFilter),
-  ]);
-
-  const fileCount = Number(fileCountRow?.c ?? 0);
-  const commitCount = Number(commitCountRow?.c ?? 0);
-
   return (
     <div className="flex items-center gap-6 font-mono text-[11px] uppercase tracking-widest text-[#57606a] dark:text-[#919191]">
       <div className="flex flex-col">
@@ -84,27 +51,7 @@ export function DeviceInfoSkeleton() {
   );
 }
 
-export async function DeviceLastActivity({
-  target,
-  canViewPrivate,
-}: {
-  target: {
-    deviceId: string;
-  };
-  canViewPrivate: boolean;
-}) {
-  const baseIsletFilter = and(
-    eq(islets.deviceId, target.deviceId),
-    ...deviceVisibilityWhere(canViewPrivate),
-  );
-
-  const [lastActivityRow] = await db
-    .select({ last: max(islets.updatedAt) })
-    .from(islets)
-    .where(baseIsletFilter);
-
-  const lastActivity = lastActivityRow?.last ?? null;
-
+export async function DeviceLastActivity({ lastActivity }: { lastActivity: Date | string | null }) {
   return (
     <p className="mt-0.5 text-xs leading-snug text-[#57606a] dark:text-[#919191]">
       {lastActivity ? `Last synced ${formatSinceSyncAbbrev(lastActivity)} ago` : "Never synced"}

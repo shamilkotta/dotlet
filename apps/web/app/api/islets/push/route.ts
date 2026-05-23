@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -18,6 +18,20 @@ const HASH_HEX_LENGTH = 64;
 
 class ClientInputError extends Error {}
 class PushConflictError extends Error {}
+
+type ChangedFile = {
+  path: string;
+  contentHash: string;
+  size: number;
+};
+
+type CreatedRevision = {
+  path: string;
+  revisionId: string;
+  isletId: string;
+  previousRevisionId: string | null;
+  contentHash: string;
+};
 
 const FileEntry = z.object({
   path: z.string(),
@@ -80,37 +94,28 @@ export async function POST(request: Request) {
 
     const paths = [...fileByPath.keys()];
     const existingIslets = await db
-      .select()
+      .select({
+        id: islets.id,
+        deviceId: islets.deviceId,
+        path: islets.path,
+        visibility: islets.visibility,
+        currentRevisionId: islets.currentRevisionId,
+        createdAt: islets.createdAt,
+        updatedAt: islets.updatedAt,
+        currentContentHash: isletRevisions.contentHash,
+      })
       .from(islets)
+      .leftJoin(isletRevisions, eq(islets.currentRevisionId, isletRevisions.id))
       .where(and(eq(islets.deviceId, device.id), inArray(islets.path, paths)));
 
     const isletByPath = new Map(existingIslets.map((row) => [row.path, row]));
 
-    const revisionIds = [...isletByPath.values()]
-      .map((i) => i.currentRevisionId)
-      .filter((id): id is string => Boolean(id));
-
-    const revisionRows =
-      revisionIds.length > 0
-        ? await db.select().from(isletRevisions).where(inArray(isletRevisions.id, revisionIds))
-        : [];
-
-    const revisionById = new Map(revisionRows.map((r) => [r.id, r]));
-
-    function currentHashForPath(p: string): string | null {
-      const islet = isletByPath.get(p);
-      if (!islet?.currentRevisionId) {
-        return null;
-      }
-      return revisionById.get(islet.currentRevisionId)?.contentHash ?? null;
-    }
-
     const unchanged: { path: string }[] = [];
-    const changed: Array<{ path: string; contentHash: string; size: number }> = [];
+    const changed: ChangedFile[] = [];
 
     for (const [path, meta] of fileByPath) {
-      const cur = currentHashForPath(path);
-      if (cur === meta.contentHash) {
+      const currentHash = isletByPath.get(path)?.currentContentHash ?? null;
+      if (currentHash === meta.contentHash) {
         unchanged.push({ path });
       } else {
         changed.push({ path, contentHash: meta.contentHash, size: meta.size });
@@ -139,103 +144,111 @@ export async function POST(request: Request) {
     const created: Array<{ path: string; revisionId: string }> = [];
 
     await db.transaction(async (tx) => {
-      for (const c of changed) {
-        let [isletRow] = await tx
-          .select()
-          .from(islets)
-          .where(and(eq(islets.deviceId, device.id), eq(islets.path, c.path)))
-          .limit(1);
-
-        if (!isletRow) {
-          await tx
-            .insert(islets)
-            .values({
+      const missingIslets = changed.filter((file) => !isletByPath.has(file.path));
+      if (missingIslets.length > 0) {
+        await tx
+          .insert(islets)
+          .values(
+            missingIslets.map((file) => ({
               deviceId: device.id,
-              path: c.path,
+              path: file.path,
               visibility: payload.visibility ?? "private",
-            })
-            .onConflictDoNothing();
+            })),
+          )
+          .onConflictDoNothing();
+      }
 
-          [isletRow] = await tx
-            .select()
-            .from(islets)
-            .where(and(eq(islets.deviceId, device.id), eq(islets.path, c.path)))
-            .limit(1);
-        }
+      const touchedIslets = await tx
+        .select()
+        .from(islets)
+        .where(
+          and(
+            eq(islets.deviceId, device.id),
+            inArray(
+              islets.path,
+              changed.map((file) => file.path),
+            ),
+          ),
+        );
+
+      const touchedIsletByPath = new Map(touchedIslets.map((row) => [row.path, row]));
+
+      const revisionRows: CreatedRevision[] = [];
+      const now = Date.now();
+      for (const file of changed) {
+        const isletRow = touchedIsletByPath.get(file.path);
 
         if (!isletRow) {
-          throw new PushConflictError(`Could not resolve islet for path: ${c.path}`);
-        }
-
-        let currentRevisionHash: string | null = null;
-        if (isletRow.currentRevisionId) {
-          const [currentRevision] = await tx
-            .select({ contentHash: isletRevisions.contentHash })
-            .from(isletRevisions)
-            .where(eq(isletRevisions.id, isletRow.currentRevisionId))
-            .limit(1);
-          currentRevisionHash = currentRevision?.contentHash ?? null;
-        }
-
-        if (currentRevisionHash === c.contentHash) {
-          unchanged.push({ path: c.path });
-          continue;
-        }
-
-        if (payload.visibility !== undefined && payload.visibility !== isletRow.visibility) {
-          const [visibilityUpdated] = await tx
-            .update(islets)
-            .set({ visibility: payload.visibility })
-            .where(eq(islets.id, isletRow.id))
-            .returning();
-          if (visibilityUpdated) {
-            isletRow = visibilityUpdated;
-          }
+          throw new PushConflictError(`Could not resolve islet for path: ${file.path}`);
         }
 
         const revisionId = generateRevisionId({
           isletId: isletRow.id,
           parentRevisionId: isletRow.currentRevisionId ?? null,
-          contentHash: c.contentHash,
-          timestamp: Date.now(),
+          contentHash: file.contentHash,
+          timestamp: now,
         });
 
-        await tx.insert(isletRevisions).values({
-          id: revisionId,
+        revisionRows.push({
+          path: file.path,
+          revisionId,
           isletId: isletRow.id,
-          parentRevisionId: isletRow.currentRevisionId ?? null,
-          contentHash: c.contentHash,
-          storageKey: c.contentHash,
-          message: payload.message ?? null,
+          previousRevisionId: isletRow.currentRevisionId ?? null,
+          contentHash: file.contentHash,
         });
-
-        const updateResult = await tx
-          .update(islets)
-          .set({
-            currentRevisionId: revisionId,
-            updatedAt: new Date(),
-          })
-          .where(
-            isletRow.currentRevisionId
-              ? and(
-                  eq(islets.id, isletRow.id),
-                  eq(islets.currentRevisionId, isletRow.currentRevisionId),
-                )
-              : and(eq(islets.id, isletRow.id), isNull(islets.currentRevisionId)),
-          )
-          .returning({ id: islets.id });
-
-        if (updateResult.length === 0) {
-          throw new PushConflictError(`Push conflict for path: ${c.path}`);
-        }
-
-        isletByPath.set(c.path, {
-          ...isletRow,
-          currentRevisionId: revisionId,
-        });
-
-        created.push({ path: c.path, revisionId });
       }
+
+      if (payload.visibility !== undefined) {
+        const isletsNeedingVisibilityUpdate = touchedIslets.filter(
+          (row) => row.visibility !== payload.visibility,
+        );
+        if (isletsNeedingVisibilityUpdate.length > 0) {
+          await tx
+            .update(islets)
+            .set({ visibility: payload.visibility })
+            .where(
+              inArray(
+                islets.id,
+                isletsNeedingVisibilityUpdate.map((row) => row.id),
+              ),
+            );
+        }
+      }
+
+      await tx.insert(isletRevisions).values(
+        revisionRows.map((row) => ({
+          id: row.revisionId,
+          isletId: row.isletId,
+          parentRevisionId: row.previousRevisionId,
+          contentHash: row.contentHash,
+          storageKey: row.contentHash,
+          message: payload.message ?? null,
+        })),
+      );
+
+      const updateValues = sql.join(
+        revisionRows.map(
+          (row) =>
+            sql`(${row.isletId}::uuid, ${row.previousRevisionId}::varchar, ${row.revisionId}::varchar)`,
+        ),
+        sql`, `,
+      );
+      const updateResult = await tx.execute<{ id: string }>(sql`
+        UPDATE "islets" AS i
+        SET
+          "current_revision_id" = updates.revision_id,
+          "updated_at" = NOW()
+        FROM (VALUES ${updateValues}) AS updates(id, previous_revision_id, revision_id)
+        WHERE i."id" = updates.id
+          AND i."current_revision_id" IS NOT DISTINCT FROM updates.previous_revision_id
+        RETURNING i."id"
+      `);
+
+      if (updateResult.rows.length !== revisionRows.length) {
+        throw new PushConflictError("Push conflict detected");
+      }
+
+      created.push(...revisionRows.map((row) => ({ path: row.path, revisionId: row.revisionId })));
     });
 
     logEvent("islet_push", {

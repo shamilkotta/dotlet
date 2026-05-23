@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -21,6 +21,12 @@ function attachmentContentDisposition(fileName: string): string {
   return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
 }
 
+function revisionJoin(version: string | null) {
+  return version
+    ? and(eq(isletRevisions.isletId, islets.id), eq(isletRevisions.id, version))
+    : and(eq(isletRevisions.isletId, islets.id), eq(isletRevisions.id, islets.currentRevisionId));
+}
+
 export async function GET(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -28,7 +34,7 @@ export async function GET(request: Request) {
     });
 
     const { searchParams } = new URL(request.url);
-    const deviceRaw = searchParams.get("d")?.trim() ?? "";
+    const deviceRaw = (searchParams.get("d") ?? searchParams.get("device"))?.trim() ?? "";
     const isletPath = searchParams.get("n")?.trim() ?? "";
     const version = searchParams.get("v")?.trim() || null;
 
@@ -45,67 +51,32 @@ export async function GET(request: Request) {
 
     const [target] = await db
       .select({
-        userId: user.id,
-        username: user.username,
-        deviceId: devices.id,
-        deviceName: devices.name,
-        visibility: devices.visibility,
+        isletPath: islets.path,
+        storageKey: isletRevisions.storageKey,
       })
       .from(user)
       .innerJoin(devices, eq(devices.userId, user.id))
-      .where(and(eq(user.username, deviceTarget.username), eq(devices.name, deviceTarget.device)))
+      .innerJoin(islets, eq(islets.deviceId, devices.id))
+      .innerJoin(isletRevisions, revisionJoin(version))
+      .where(
+        and(
+          eq(user.username, deviceTarget.username),
+          eq(devices.name, deviceTarget.device),
+          eq(islets.path, isletPath),
+          sql`(${devices.userId} = ${session?.user.id ?? null} OR (${devices.visibility} = 'public' AND ${islets.visibility} = 'public'))`,
+        ),
+      )
       .limit(1);
 
     if (!target) {
       return badRequest("Not found", 404);
     }
 
-    const canViewPrivate = session?.user.id === target.userId;
-    if (!canViewPrivate && target.visibility !== "public") {
-      return badRequest("Not found", 404);
-    }
-
-    const [isletRow] = await db
-      .select({
-        id: islets.id,
-        path: islets.path,
-        visibility: islets.visibility,
-        currentRevisionId: islets.currentRevisionId,
-      })
-      .from(islets)
-      .where(and(eq(islets.deviceId, target.deviceId), eq(islets.path, isletPath)))
-      .limit(1);
-
-    if (!isletRow) {
-      return badRequest("Not found", 404);
-    }
-    if (isletRow.visibility === "private" && !canViewPrivate) {
-      return badRequest("Not found", 404);
-    }
-    if (!isletRow.currentRevisionId) {
-      return badRequest("Not found", 404);
-    }
-
-    const revisionIdWanted = version ?? isletRow.currentRevisionId;
-
-    const [revision] = await db
-      .select({
-        id: isletRevisions.id,
-        storageKey: isletRevisions.storageKey,
-      })
-      .from(isletRevisions)
-      .where(and(eq(isletRevisions.id, revisionIdWanted), eq(isletRevisions.isletId, isletRow.id)))
-      .limit(1);
-
-    if (!revision) {
-      return badRequest("Not found", 404);
-    }
-
-    const { fileName: displayName } = splitDirAndFile(isletRow.path);
-    const downloadName = displayName || isletRow.path.split("/").pop() || "file";
+    const { fileName: displayName } = splitDirAndFile(target.isletPath);
+    const downloadName = displayName || target.isletPath.split("/").pop() || "file";
 
     const storage = getStorageProvider();
-    const url = await storage.presignGetUrl(revision.storageKey, {
+    const url = await storage.presignGetUrl(target.storageKey, {
       responseContentDisposition: attachmentContentDisposition(downloadName),
     });
 

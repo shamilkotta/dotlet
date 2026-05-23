@@ -1,26 +1,21 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { devices, islets, isletStars } from "@/lib/db/schema";
 
 export async function getIsletStarState(isletId: string, userId: string | undefined) {
-  const [countRow] = await db
-    .select({ n: count() })
+  const [row] = await db
+    .select({
+      starCount: count(),
+      initialStarred: sql<boolean>`bool_or(${isletStars.userId} = ${userId ?? null})`,
+    })
     .from(isletStars)
     .where(eq(isletStars.isletId, isletId));
-  const starCount = Number(countRow?.n ?? 0);
 
-  let initialStarred = false;
-  if (userId) {
-    const [row] = await db
-      .select({ userId: isletStars.userId })
-      .from(isletStars)
-      .where(and(eq(isletStars.isletId, isletId), eq(isletStars.userId, userId)))
-      .limit(1);
-    initialStarred = Boolean(row);
-  }
-
-  return { starCount, initialStarred };
+  return {
+    starCount: Number(row?.starCount ?? 0),
+    initialStarred: Boolean(row?.initialStarred),
+  };
 }
 
 export async function getUserStarredIslets(userId: string) {
