@@ -37,7 +37,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --out-dir dist --clean --env.DOTLET_BASE_URL https://dotlet.app",
+    "build": "tsup src/index.ts --format esm --out-dir dist --clean --env.DOTLET_BASE_URL https://dotlet.app",
     "dev": "tsup src/index.ts --format esm --dts --out-dir dist --clean --watch --env.DOTLET_BASE_URL http://localhost:3000",
     "lint": "oxlint src",
     "format": "oxfmt --write src",
