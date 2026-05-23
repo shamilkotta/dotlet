@@ -11,6 +11,7 @@ import { DotletApiLive } from "./services/dotlet-api.js";
 import { FileServiceLive } from "./services/file-service.js";
 import { Terminal, TerminalLive } from "./services/terminal.js";
 import { formatCliError } from "./programs.js";
+import packageJson from "../package.json" with { type: "json" };
 
 const appLayer = Layer.mergeAll(
   NodeContext.layer,
@@ -25,7 +26,7 @@ const appLayer = Layer.mergeAll(
 export function main(argv = process.argv): void {
   const program = Command.run(rootCommand, {
     name: "dotlet",
-    version: "0.1.0",
+    version: packageJson.version,
     executable: "dotlet",
   })(argv).pipe(
     Effect.tap(() =>
