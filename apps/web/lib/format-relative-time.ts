@@ -1,3 +1,18 @@
+type DateInput = Date | string | null | undefined;
+
+function toDate(value: DateInput): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function formatRelativeTimeVerbose(date: Date, now = new Date()): string {
   const s = Math.floor((now.getTime() - date.getTime()) / 1000);
   if (s < 45) return "just now";
@@ -15,9 +30,10 @@ export function formatRelativeTimeVerbose(date: Date, now = new Date()): string 
   return `${y} year${y === 1 ? "" : "s"} ago`;
 }
 
-export function formatSinceSyncAbbrev(date: Date | null, now = new Date()): string {
-  if (!date) return "—";
-  const s = Math.floor((now.getTime() - date.getTime()) / 1000);
+export function formatSinceSyncAbbrev(date: DateInput, now = new Date()): string {
+  const normalized = toDate(date);
+  if (!normalized) return "—";
+  const s = Math.floor((now.getTime() - normalized.getTime()) / 1000);
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m`;

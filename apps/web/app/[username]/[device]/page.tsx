@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { devices, user } from "@/lib/db/schema";
 import { createDeviceMetadata } from "@/lib/page-metadata";
-import { IsletsList, IsletsListSkeleton } from "@/components/device/islets";
+import { IsletsList, IsletsListSkeleton, type IsletRecord } from "@/components/device/islets";
 import {
   DeviceInfo,
   DeviceInfoSkeleton,
@@ -18,6 +18,7 @@ import {
 } from "@/components/device/info";
 import Link from "next/link";
 import { Lock } from "lucide-react";
+import { isletRevisions, islets } from "@/lib/db/schema";
 
 export async function generateMetadata({
   params,
@@ -28,16 +29,7 @@ export async function generateMetadata({
   return createDeviceMetadata(username, device);
 }
 
-export default async function DevicePage({
-  params,
-}: {
-  params: Promise<{ username: string; device: string }>;
-}) {
-  const { username, device } = await params;
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
+async function loadDevicePageData(username: string, device: string, viewerId: string | undefined) {
   const [target] = await db
     .select({
       userId: user.id,
@@ -54,13 +46,82 @@ export default async function DevicePage({
     .limit(1);
 
   if (!target) {
-    notFound();
+    return null;
   }
 
-  const canViewPrivate = session?.user.id === target.userId;
+  const canViewPrivate = viewerId === target.userId;
   if (!canViewPrivate && target.visibility !== "public") {
+    return null;
+  }
+
+  const visibleIsletFilter = canViewPrivate
+    ? eq(islets.deviceId, target.deviceId)
+    : and(eq(islets.deviceId, target.deviceId), eq(islets.visibility, "public"));
+
+  const records = (await db
+    .select({
+      path: islets.path,
+      message: isletRevisions.message,
+      updatedAt: islets.updatedAt,
+      revisionId: islets.currentRevisionId,
+      visibility: islets.visibility,
+      fileCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "islets" AS visible_islets
+        WHERE visible_islets."device_id" = ${target.deviceId}
+          AND (${canViewPrivate} OR visible_islets."visibility" = 'public')
+      )`,
+      commitCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "islet_revisions" AS revisions
+        INNER JOIN "islets" AS revision_islets
+          ON revisions."islet_id" = revision_islets."id"
+        WHERE revision_islets."device_id" = ${target.deviceId}
+          AND (${canViewPrivate} OR revision_islets."visibility" = 'public')
+      )`,
+      lastActivity: sql<Date | null>`(
+        SELECT max(activity_islets."updated_at")
+        FROM "islets" AS activity_islets
+        WHERE activity_islets."device_id" = ${target.deviceId}
+          AND (${canViewPrivate} OR activity_islets."visibility" = 'public')
+      )`,
+    })
+    .from(islets)
+    .leftJoin(isletRevisions, eq(islets.currentRevisionId, isletRevisions.id))
+    .where(visibleIsletFilter)
+    .orderBy(desc(islets.updatedAt))) as Array<
+    IsletRecord & {
+      fileCount: number;
+      commitCount: number;
+      lastActivity: Date | null;
+    }
+  >;
+
+  return {
+    target,
+    canViewPrivate,
+    records,
+    fileCount: Number(records[0]?.fileCount ?? 0),
+    commitCount: Number(records[0]?.commitCount ?? 0),
+    lastActivity: records[0]?.lastActivity ?? null,
+  };
+}
+
+export default async function DevicePage({
+  params,
+}: {
+  params: Promise<{ username: string; device: string }>;
+}) {
+  const { username, device } = await params;
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const data = await loadDevicePageData(username, device, session?.user.id);
+  if (!data) {
     notFound();
   }
+  const { commitCount, fileCount, lastActivity, records, target } = data;
 
   return (
     <>
@@ -103,16 +164,16 @@ export default async function DevicePage({
                 {target.visibility !== "public" && <Lock className="size-4" />}
               </div>
               <Suspense fallback={<DeviceLastActivitySkeleton />}>
-                <DeviceLastActivity target={target} canViewPrivate={canViewPrivate} />
+                <DeviceLastActivity lastActivity={lastActivity} />
               </Suspense>
             </div>
           </div>
           <Suspense fallback={<DeviceInfoSkeleton />}>
-            <DeviceInfo target={target} canViewPrivate={canViewPrivate} />
+            <DeviceInfo commitCount={commitCount} fileCount={fileCount} />
           </Suspense>
         </div>
         <Suspense fallback={<IsletsListSkeleton />}>
-          <IsletsList target={target} canViewPrivate={canViewPrivate} />
+          <IsletsList records={records} target={target} />
         </Suspense>
       </main>
     </>

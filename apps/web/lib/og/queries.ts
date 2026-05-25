@@ -1,16 +1,43 @@
-import { and, count, eq, max, sql } from "drizzle-orm";
+import { cache } from "react";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
-import { devices, isletRevisions, isletStars, islets, user } from "@/lib/db/schema";
+import { devices, isletRevisions, islets, user } from "@/lib/db/schema";
 import { getLanguageFromPath, getLanguageLabel } from "@/lib/file";
 
-export async function getProfileOgData(username: string) {
+export const getProfileOgData = cache(async function getProfileOgData(username: string) {
   const [profile] = await db
     .select({
       id: user.id,
       username: user.username,
       name: user.name,
       image: user.image,
+      deviceCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "devices" AS profile_devices
+        WHERE profile_devices."user_id" = "user"."id"
+          AND profile_devices."visibility" = 'public'
+      )`,
+      isletCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "islets" AS profile_islets
+        INNER JOIN "devices" AS profile_islet_devices
+          ON profile_islets."device_id" = profile_islet_devices."id"
+        WHERE profile_islet_devices."user_id" = "user"."id"
+          AND profile_islet_devices."visibility" = 'public'
+          AND profile_islets."visibility" = 'public'
+      )`,
+      starCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "islet_stars" AS profile_stars
+        INNER JOIN "islets" AS starred_islets
+          ON profile_stars."islet_id" = starred_islets."id"
+        INNER JOIN "devices" AS starred_devices
+          ON starred_islets."device_id" = starred_devices."id"
+        WHERE starred_devices."user_id" = "user"."id"
+          AND starred_devices."visibility" = 'public'
+          AND starred_islets."visibility" = 'public'
+      )`,
     })
     .from(user)
     .where(sql`lower(${user.username}) = ${username.toLowerCase()}`)
@@ -20,42 +47,18 @@ export async function getProfileOgData(username: string) {
     return null;
   }
 
-  const publicFilter = and(eq(devices.userId, profile.id), eq(devices.visibility, "public"));
-
-  const deviceRows = await db
-    .select({
-      isletCount: count(islets.id),
-    })
-    .from(devices)
-    .where(publicFilter)
-    .leftJoin(islets, and(eq(devices.id, islets.deviceId), eq(islets.visibility, "public")))
-    .groupBy(devices.id);
-
-  const [starCountRow] = await db
-    .select({ c: count(isletStars.id) })
-    .from(isletStars)
-    .innerJoin(islets, eq(isletStars.isletId, islets.id))
-    .innerJoin(devices, eq(islets.deviceId, devices.id))
-    .where(
-      and(
-        eq(devices.userId, profile.id),
-        eq(devices.visibility, "public"),
-        eq(islets.visibility, "public"),
-      ),
-    );
-
-  const deviceCount = deviceRows.length;
-  const isletCount = deviceRows.reduce((sum, row) => sum + Number(row.isletCount ?? 0), 0);
-
   return {
     ...profile,
-    deviceCount,
-    isletCount,
-    starCount: Number(starCountRow?.c ?? 0),
+    deviceCount: Number(profile.deviceCount ?? 0),
+    isletCount: Number(profile.isletCount ?? 0),
+    starCount: Number(profile.starCount ?? 0),
   };
-}
+});
 
-export async function getDeviceOgData(username: string, deviceName: string) {
+export const getDeviceOgData = cache(async function getDeviceOgData(
+  username: string,
+  deviceName: string,
+) {
   const [target] = await db
     .select({
       userId: user.id,
@@ -63,6 +66,26 @@ export async function getDeviceOgData(username: string, deviceName: string) {
       deviceId: devices.id,
       deviceName: devices.name,
       visibility: devices.visibility,
+      isletCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "islets" AS device_islets
+        WHERE device_islets."device_id" = "devices"."id"
+          AND ("devices"."visibility" = 'public' AND device_islets."visibility" = 'public' OR "devices"."visibility" <> 'public')
+      )`,
+      revisionCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "islet_revisions" AS device_revisions
+        INNER JOIN "islets" AS revision_islets
+          ON device_revisions."islet_id" = revision_islets."id"
+        WHERE revision_islets."device_id" = "devices"."id"
+          AND ("devices"."visibility" = 'public' AND revision_islets."visibility" = 'public' OR "devices"."visibility" <> 'public')
+      )`,
+      lastSyncedAt: sql<Date | null>`(
+        SELECT max(device_activity."updated_at")
+        FROM "islets" AS device_activity
+        WHERE device_activity."device_id" = "devices"."id"
+          AND ("devices"."visibility" = 'public' AND device_activity."visibility" = 'public' OR "devices"."visibility" <> 'public')
+      )`,
     })
     .from(user)
     .innerJoin(devices, eq(devices.userId, user.id))
@@ -74,36 +97,17 @@ export async function getDeviceOgData(username: string, deviceName: string) {
   }
 
   const isPublic = target.visibility === "public";
-  const isletFilter = isPublic
-    ? and(eq(islets.deviceId, target.deviceId), eq(islets.visibility, "public"))
-    : eq(islets.deviceId, target.deviceId);
-
-  const [[isletCountRow], [revisionCountRow], [lastSyncedRow]] = await Promise.all([
-    db
-      .select({ c: count(islets.id) })
-      .from(islets)
-      .where(isletFilter),
-    db
-      .select({ c: count(isletRevisions.id) })
-      .from(isletRevisions)
-      .innerJoin(islets, eq(isletRevisions.isletId, islets.id))
-      .where(isletFilter),
-    db
-      .select({ lastSyncedAt: max(islets.updatedAt) })
-      .from(islets)
-      .where(isletFilter),
-  ]);
 
   return {
     ...target,
     isPublic,
-    isletCount: Number(isletCountRow?.c ?? 0),
-    revisionCount: Number(revisionCountRow?.c ?? 0),
-    lastSyncedAt: lastSyncedRow?.lastSyncedAt ?? null,
+    isletCount: Number(target.isletCount ?? 0),
+    revisionCount: Number(target.revisionCount ?? 0),
+    lastSyncedAt: target.lastSyncedAt ?? null,
   };
-}
+});
 
-export async function getIsletOgData(
+export const getIsletOgData = cache(async function getIsletOgData(
   username: string,
   deviceName: string,
   isletPath: string,
@@ -116,64 +120,52 @@ export async function getIsletOgData(
       deviceId: devices.id,
       deviceName: devices.name,
       deviceVisibility: devices.visibility,
-    })
-    .from(user)
-    .innerJoin(devices, eq(devices.userId, user.id))
-    .where(and(eq(user.username, username), eq(devices.name, deviceName)))
-    .limit(1);
-
-  if (!target) {
-    return null;
-  }
-
-  const [isletRow] = await db
-    .select({
       id: islets.id,
       path: islets.path,
       visibility: islets.visibility,
       currentRevisionId: islets.currentRevisionId,
       updatedAt: islets.updatedAt,
+      revisionId: isletRevisions.id,
+      starCount: sql<number>`(
+        SELECT count(*)::int
+        FROM "islet_stars" AS og_stars
+        WHERE og_stars."islet_id" = "islets"."id"
+      )`,
     })
-    .from(islets)
-    .where(and(eq(islets.deviceId, target.deviceId), eq(islets.path, isletPath)))
+    .from(user)
+    .innerJoin(devices, eq(devices.userId, user.id))
+    .innerJoin(islets, eq(islets.deviceId, devices.id))
+    .innerJoin(
+      isletRevisions,
+      and(
+        eq(isletRevisions.isletId, islets.id),
+        version?.trim()
+          ? eq(isletRevisions.id, version.trim())
+          : eq(isletRevisions.id, islets.currentRevisionId),
+      ),
+    )
+    .where(
+      and(eq(user.username, username), eq(devices.name, deviceName), eq(islets.path, isletPath)),
+    )
     .limit(1);
 
-  if (!isletRow?.currentRevisionId) {
+  if (!target?.currentRevisionId) {
     return null;
   }
 
-  const isPublic = target.deviceVisibility === "public" && isletRow.visibility === "public";
-  const revisionId = version?.trim() || isletRow.currentRevisionId;
-
-  const [[revision], [starCountRow]] = await Promise.all([
-    db
-      .select({
-        id: isletRevisions.id,
-      })
-      .from(isletRevisions)
-      .where(and(eq(isletRevisions.id, revisionId), eq(isletRevisions.isletId, isletRow.id)))
-      .limit(1),
-    db
-      .select({ c: count(isletStars.id) })
-      .from(isletStars)
-      .where(eq(isletStars.isletId, isletRow.id)),
-  ]);
-
-  if (!revision) {
-    return null;
-  }
-
-  const language = getLanguageFromPath(isletRow.path);
+  const isPublic = target.deviceVisibility === "public" && target.visibility === "public";
+  const language = getLanguageFromPath(target.path);
   const languageLabel = getLanguageLabel(language);
 
   return {
     username: target.username ?? username,
     deviceName: target.deviceName,
-    path: isletRow.path,
-    revisionId: revision.id,
+    userId: target.userId,
+    path: target.path,
+    revisionId: target.revisionId,
     languageLabel,
     isPublic,
-    starCount: Number(starCountRow?.c ?? 0),
-    updatedAt: isletRow.updatedAt,
+    starCount: Number(target.starCount ?? 0),
+    updatedAt: target.updatedAt,
   };
-}
+});

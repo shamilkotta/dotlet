@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
@@ -5,12 +6,12 @@ import { getDeviceOgData, getIsletOgData, getProfileOgData } from "@/lib/og/quer
 import { buildIsletOgImagePath, buildIsletPagePath, createPageMetadata } from "@/lib/metadata";
 import { splitDirAndFile } from "@/lib/core/path";
 
-export async function getViewerUserId(): Promise<string | null> {
+export const getViewerUserId = cache(async function getViewerUserId(): Promise<string | null> {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
   return session?.user.id ?? null;
-}
+});
 
 export async function createProfileMetadata(username: string) {
   const profile = await getProfileOgData(username);
@@ -94,8 +95,7 @@ export async function createIsletMetadata(
   }
 
   if (!data.isPublic) {
-    const device = await getDeviceOgData(username, deviceName);
-    const canViewPrivate = Boolean(device && viewerId === device.userId);
+    const canViewPrivate = viewerId === data.userId;
     if (!canViewPrivate) {
       return createPageMetadata({
         title: "Private islet",
@@ -139,8 +139,7 @@ export async function createIsletHistoryMetadata(
   }
 
   if (!data.isPublic) {
-    const device = await getDeviceOgData(username, deviceName);
-    const canViewPrivate = Boolean(device && viewerId === device.userId);
+    const canViewPrivate = viewerId === data.userId;
     if (!canViewPrivate) {
       return createPageMetadata({
         title: "Private islet history",

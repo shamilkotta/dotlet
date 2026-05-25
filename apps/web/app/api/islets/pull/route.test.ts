@@ -29,14 +29,14 @@ import { getStorageProvider } from "@/lib/storage/provider";
 import { GET } from "./route";
 
 function deviceSelectChain<T>(rows: T[]) {
-  return {
-    from: () => ({
-      innerJoin: () => ({
-        where: () => ({
-          limit: () => Promise.resolve(rows),
-        }),
-      }),
+  const chain = {
+    innerJoin: () => chain,
+    where: () => ({
+      limit: () => Promise.resolve(rows),
     }),
+  };
+  return {
+    from: () => chain,
   };
 }
 

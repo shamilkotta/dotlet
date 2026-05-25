@@ -60,7 +60,7 @@ describe("resolveMissingFileUploads", () => {
     expect(storage.presignPutUrl).not.toHaveBeenCalled();
   });
 
-  it("presigns a replacement when an existing object is corrupt", async () => {
+  it("skips presigning when the object exists in storage", async () => {
     const contentHash = "ab".repeat(32);
     const storage = createStorage({
       exists: vi.fn(async () => true),
@@ -72,7 +72,7 @@ describe("resolveMissingFileUploads", () => {
       storage,
     );
 
-    expect(missingFiles).toHaveLength(1);
-    expect(storage.presignPutUrl).toHaveBeenCalledOnce();
+    expect(missingFiles).toEqual([]);
+    expect(storage.presignPutUrl).not.toHaveBeenCalled();
   });
 });
