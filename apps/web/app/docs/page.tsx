@@ -86,18 +86,18 @@ const TOC_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "login", label: "login" },
   { id: "logout", label: "logout" },
-  { id: "push", label: "push" },
-  { id: "pull", label: "pull" },
-  { id: "pull-targets", label: "Pull Targets" },
-  { id: "list", label: "list" },
-  { id: "delete", label: "delete" },
-  { id: "update", label: "update" },
   { id: "device", label: "device" },
   { id: "device-list", label: "list", nested: true },
   { id: "device-create", label: "create", nested: true },
   { id: "device-use", label: "use", nested: true },
   { id: "device-update", label: "update", nested: true },
   { id: "device-delete", label: "delete", nested: true },
+  { id: "push", label: "push" },
+  { id: "pull", label: "pull" },
+  { id: "pull-targets", label: "Pull Targets" },
+  { id: "list", label: "list" },
+  { id: "delete", label: "delete" },
+  { id: "update", label: "update" },
   { id: "examples", label: "Workflows" },
 ] as const;
 
@@ -208,12 +208,12 @@ dotlet v${process.env.NEXT_PUBLIC_DOTLET_CLI_VERSION}`}</DocsCodeBlock>
 Commands:
   login              Sign in to your Dotlet account
   logout             Log out of your Dotlet account
+  device             Manage devices
   push <path>        Push a file or directory as an islet
   pull <islet>       Pull an islet
   list               List islets for a device
   delete <islet>     Delete an islet from your account
-  update <islet>     Update an islet
-  device             Manage devices`}</DocsCodeBlock>
+  update <islet>     Update an islet`}</DocsCodeBlock>
                 </section>
 
                 <section id="login" className="scroll-mt-24">
@@ -251,291 +251,8 @@ Commands:
                   </div>
                 </section>
 
-                <section id="push" className="scroll-mt-24">
-                  <SectionHeading id="push-h" number="05" title="Push" />
-                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Push a file or directory as an islet to your device. Each push creates a new
-                    version. If the content hasn't changed, the file is marked as unchanged.
-                  </p>
-                  <DocsCodeBlock>{`$ dot push <path> [options]`}</DocsCodeBlock>
-
-                  <SubHeading id="push-args" title="Arguments" />
-                  <OptionRow
-                    flag="<path>"
-                    description="File or directory to push. Can be a relative or absolute path."
-                  />
-
-                  <SubHeading id="push-options" title="Options" />
-                  <div>
-                    <OptionRow
-                      flag="--device"
-                      alias="-d"
-                      value="<name>"
-                      description="Device to target. Overrides the configured default device."
-                    />
-                    <OptionRow
-                      flag="--name"
-                      alias="-n"
-                      value="<name>"
-                      description="Custom islet name. This name will be used as path for the islet instead of the current path."
-                    />
-                    <OptionRow
-                      flag="--absolute"
-                      alias="-a"
-                      description="Store file paths as absolute instead of relative. Useful when you want to restore files to their exact original location."
-                    />
-                    <OptionRow
-                      flag="--message"
-                      alias="-m"
-                      value="<text>"
-                      description="Message describing this islet version, similar to a commit message."
-                    />
-                    <OptionRow
-                      flag="--visibility"
-                      alias="-v"
-                      value="public | private"
-                      description="Whether the islet is visible to others. Defaults to the device's visibility."
-                    />
-                  </div>
-
-                  <SubHeading id="push-examples" title="Examples" />
-                  <DocsCodeBlock>{`# Push a single config file
-$ dot push ~/.config/ghostty/config
-
-# Push an entire directory
-$ dot push ~/.config/nvim
-
-# Push to a specific device with a message
-$ dot push ~/.zshrc -d laptop -m "added aliases"
-
-# Push with absolute path storage
-$ dot push ./.vscode/settings.json --absolute
-
-# Push with a custom name
-$ dot push ~/.config/ghostty/config -n ./ghostty/config
-
-# Push as private
-$ dot push ~/.ssh/config -v private`}</DocsCodeBlock>
-                </section>
-
-                <section id="pull" className="scroll-mt-24">
-                  <SectionHeading id="pull-h" number="06" title="Pull" />
-                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Pull an islet and write the files to disk. By default, files are restored to
-                    their original paths. Existing files are skipped unless{" "}
-                    <InlineCode>--force</InlineCode> is used.
-                  </p>
-                  <DocsCodeBlock>{`$ dot pull <islet> [options]`}</DocsCodeBlock>
-
-                  <SubHeading id="pull-args" title="Arguments" />
-                  <OptionRow
-                    flag="<islet>"
-                    description="Name of the islet to pull. Accepts short form, full form, or a web URL. See Pull Targets below."
-                  />
-
-                  <SubHeading id="pull-options" title="Options" />
-                  <div>
-                    <OptionRow
-                      flag="--force"
-                      alias="-f"
-                      description="Replace files that already exist locally. Without this flag, existing files are skipped with a warning."
-                    />
-                    <OptionRow
-                      flag="--path"
-                      alias="-p"
-                      value="<path>"
-                      description="Path to write pulled files into. Overrides the original file paths."
-                    />
-                    <OptionRow
-                      flag="--device"
-                      alias="-d"
-                      value="<device | username/device>"
-                      description="Device to pull from. your device name, or username/device for a specific account. Only valid with short-form islet names. Cannot be combined with full-form targets or URLs."
-                    />
-                    <OptionRow
-                      flag="--version"
-                      alias="-v"
-                      value="<version>"
-                      description='Version of the islet to pull. Can also be specified inline with "?v=" in the target string.'
-                    />
-                  </div>
-
-                  <SubHeading id="pull-targets" title="Pull Targets" />
-                  <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-                    The <InlineCode>{"<islet>"}</InlineCode> argument accepts three formats:
-                  </p>
-                  <div className="space-y-8">
-                    <div>
-                      <span className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-foreground">
-                        Short form
-                      </span>
-                      <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
-                        Just the islet name. Use your default device or <InlineCode>-d</InlineCode>{" "}
-                        / <InlineCode>--device</InlineCode> with a device name (your account) or{" "}
-                        <InlineCode>username/device</InlineCode> to target a specific account
-                        without using the full <InlineCode>username/device:islet</InlineCode> form.
-                      </p>
-                      <DocsCodeBlock>{`$ dot pull ~/.zshrc
-$ dot pull ./nvim/init.lua
-$ dot pull ~/.zshrc?v=rev2
-$ dot pull ~/.zshrc -d laptop
-$ dot pull ~/.zshrc -d alice/laptop`}</DocsCodeBlock>
-                    </div>
-
-                    <div>
-                      <span className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-foreground">
-                        Full form
-                      </span>
-                      <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
-                        Includes the username and device. No <InlineCode>--device</InlineCode> flag
-                        needed.
-                      </p>
-                      <DocsCodeBlock>{`$ dot pull alice/laptop:~/.zshrc
-$ dot pull alice/laptop:./nvim/init.lua?v=rev1`}</DocsCodeBlock>
-                    </div>
-
-                    <div>
-                      <span className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-foreground">
-                        Web URL
-                      </span>
-                      <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
-                        A full URL from the dotlet web interface. Cannot be combined with{" "}
-                        <InlineCode>--device</InlineCode>.
-                      </p>
-                      <DocsCodeBlock>{`$ dot pull "${APP_URL}/alice/laptop/islet?n=~/.zshrc"
-$ dot pull "${APP_URL}/alice/laptop/islet?n=./nvim/init.lua&v=rev1"`}</DocsCodeBlock>
-                    </div>
-                  </div>
-
-                  <SubHeading id="pull-examples" title="Examples" />
-                  <DocsCodeBlock>{`# Pull and restore to original path
-$ dot pull ~/.zshrc
-
-# Pull and overwrite existing files
-$ dot pull ~/.zshrc --force
-
-# Pull to a custom directory
-$ dot pull ./nvim/init.lua -p ~/backup/init.lua
-
-# Pull a specific version
-$ dot pull ~/.zshrc -v rev3
-
-# Short form with explicit username/device (-d)
-$ dot pull ~/.zshrc -d alice/laptop
-
-# Pull from another user's public islet (full form)
-$ dot pull alice/laptop:~/.zshrc`}</DocsCodeBlock>
-                </section>
-
-                <section id="list" className="scroll-mt-24">
-                  <SectionHeading id="list-h" number="07" title="List" />
-                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    List all islets for the selected or specified device.{" "}
-                    <InlineCode>--device</InlineCode> accepts a device name on your account or{" "}
-                    <InlineCode>username/device</InlineCode> to list another user&apos;s device.
-                    Running <InlineCode>dot</InlineCode> with no subcommand is equivalent to{" "}
-                    <InlineCode>dot list</InlineCode>.
-                  </p>
-                  <DocsCodeBlock>{`$ dot list [options]
-$ dot              # same as dot list`}</DocsCodeBlock>
-
-                  <SubHeading id="list-options" title="Options" />
-                  <OptionRow
-                    flag="--device"
-                    alias="-d"
-                    value="<device | username/device>"
-                    description="Device to list islets for: your device name, or username/device for a specific account. Uses the configured default device when omitted."
-                  />
-
-                  <SubHeading id="list-example-output" title="Examples" />
-                  <DocsCodeBlock>{`$ dot list -d personal
-$ dot list -d alice/laptop`}</DocsCodeBlock>
-                  <div className="mt-4 space-y-4">
-                    <DocsCodeBlock label="output (your device)">{`✔ Found 3 islets
-personal
-
-  ‣ .zshrc
-  ‣ nvim/init.lua
-  ‣ .config/ghostty/config`}</DocsCodeBlock>
-                    <DocsCodeBlock label="output (username/device)">{`✔ Found 2 islets
-alice/laptop
-
-  ‣ .zshrc
-  ‣ nvim/init.lua`}</DocsCodeBlock>
-                  </div>
-                </section>
-
-                <section id="delete" className="scroll-mt-24">
-                  <SectionHeading id="delete-h" number="08" title="Delete" />
-                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Permanently remove an islet from your device.
-                  </p>
-                  <DocsCodeBlock>{`$ dot delete <islet> [options]`}</DocsCodeBlock>
-
-                  <SubHeading id="delete-args" title="Arguments" />
-                  <OptionRow
-                    flag="<islet>"
-                    description="Islet to delete. Same target formats as pull (short form, full form, or web URL) without a version selector."
-                  />
-
-                  <SubHeading id="delete-options" title="Options" />
-                  <div>
-                    <OptionRow
-                      flag="--device"
-                      alias="-d"
-                      value="<device | username/device>"
-                      description="Same meaning as for pull when using short-form islet names. Only your own devices can be targeted for deletion."
-                    />
-                    <OptionRow flag="--yes" alias="-y" description="Skip the confirmation prompt" />
-                  </div>
-
-                  <SubHeading id="delete-examples" title="Examples" />
-                  <DocsCodeBlock>{`# Delete on the default device (prompted)
-$ dot delete ~/.zshrc
-
-# Full form
-$ dot delete alice/laptop:~/.zshrc
-
-# Non-interactive / scripting
-$ dot delete ~/.zshrc --yes`}</DocsCodeBlock>
-                </section>
-
-                <section id="update" className="scroll-mt-24">
-                  <SectionHeading id="update-h" number="09" title="Update" />
-                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Update islet name and visibility.
-                  </p>
-                  <DocsCodeBlock>{`$ dot update <islet> [options]`}</DocsCodeBlock>
-
-                  <SubHeading id="update-args" title="Arguments" />
-                  <OptionRow
-                    flag="<islet>"
-                    description="Islet to update. Same target formats as pull without a version selector."
-                  />
-
-                  <SubHeading id="update-options" title="Options" />
-                  <div>
-                    <OptionRow
-                      flag="--device"
-                      alias="-d"
-                      value="<device | username/device>"
-                      description="Same meaning as for pull when using short-form islet names."
-                    />
-                  </div>
-
-                  <SubHeading id="update-examples" title="Examples" />
-                  <DocsCodeBlock>{`# Update on the default device (prompted)
-$ dot update ~/.zshrc
-
-# Short form with explicit device
-$ dot update ~/.zshrc -d laptop
-
-# Full form
-$ dot update alice/laptop:~/.zshrc`}</DocsCodeBlock>
-                </section>
-
                 <section id="device" className="scroll-mt-24">
-                  <SectionHeading id="device-h" number="10" title="Device" />
+                  <SectionHeading id="device-h" number="05" title="Device" />
                   <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                     Manage devices: list, create, choose a default, update, or delete. Running{" "}
                     <InlineCode>dot device</InlineCode> with no subcommand is equivalent to{" "}
@@ -654,6 +371,289 @@ $ dot device delete old-laptop
 
 # Scripting
 $ dot device delete old-laptop --yes`}</DocsCodeBlock>
+                </section>
+
+                <section id="push" className="scroll-mt-24">
+                  <SectionHeading id="push-h" number="06" title="Push" />
+                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    Push a file or directory as an islet to your device. Each push creates a new
+                    version. If the content hasn't changed, the file is marked as unchanged.
+                  </p>
+                  <DocsCodeBlock>{`$ dot push <path> [options]`}</DocsCodeBlock>
+
+                  <SubHeading id="push-args" title="Arguments" />
+                  <OptionRow
+                    flag="<path>"
+                    description="File or directory to push. Can be a relative or absolute path."
+                  />
+
+                  <SubHeading id="push-options" title="Options" />
+                  <div>
+                    <OptionRow
+                      flag="--device"
+                      alias="-d"
+                      value="<name>"
+                      description="Device to target. Overrides the configured default device."
+                    />
+                    <OptionRow
+                      flag="--name"
+                      alias="-n"
+                      value="<name>"
+                      description="Custom islet name. This name will be used as path for the islet instead of the current path."
+                    />
+                    <OptionRow
+                      flag="--absolute"
+                      alias="-a"
+                      description="Store file paths as absolute instead of relative. Useful when you want to restore files to their exact original location."
+                    />
+                    <OptionRow
+                      flag="--message"
+                      alias="-m"
+                      value="<text>"
+                      description="Message describing this islet version, similar to a commit message."
+                    />
+                    <OptionRow
+                      flag="--visibility"
+                      alias="-v"
+                      value="public | private"
+                      description="Whether the islet is visible to others. Defaults to the device's visibility."
+                    />
+                  </div>
+
+                  <SubHeading id="push-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Push a single config file
+$ dot push ~/.config/ghostty/config
+
+# Push an entire directory
+$ dot push ~/.config/nvim
+
+# Push to a specific device with a message
+$ dot push ~/.zshrc -d laptop -m "added aliases"
+
+# Push with absolute path storage
+$ dot push ./.vscode/settings.json --absolute
+
+# Push with a custom name
+$ dot push ~/.config/ghostty/config -n ./ghostty/config
+
+# Push as private
+$ dot push ~/.ssh/config -v private`}</DocsCodeBlock>
+                </section>
+
+                <section id="pull" className="scroll-mt-24">
+                  <SectionHeading id="pull-h" number="07" title="Pull" />
+                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    Pull an islet and write the files to disk. By default, files are restored to
+                    their original paths. Existing files are skipped unless{" "}
+                    <InlineCode>--force</InlineCode> is used.
+                  </p>
+                  <DocsCodeBlock>{`$ dot pull <islet> [options]`}</DocsCodeBlock>
+
+                  <SubHeading id="pull-args" title="Arguments" />
+                  <OptionRow
+                    flag="<islet>"
+                    description="Name of the islet to pull. Accepts short form, full form, or a web URL. See Pull Targets below."
+                  />
+
+                  <SubHeading id="pull-options" title="Options" />
+                  <div>
+                    <OptionRow
+                      flag="--force"
+                      alias="-f"
+                      description="Replace files that already exist locally. Without this flag, existing files are skipped with a warning."
+                    />
+                    <OptionRow
+                      flag="--path"
+                      alias="-p"
+                      value="<path>"
+                      description="Path to write pulled files into. Overrides the original file paths."
+                    />
+                    <OptionRow
+                      flag="--device"
+                      alias="-d"
+                      value="<device | username/device>"
+                      description="Device to pull from. your device name, or username/device for a specific account. Only valid with short-form islet names. Cannot be combined with full-form targets or URLs."
+                    />
+                    <OptionRow
+                      flag="--version"
+                      alias="-v"
+                      value="<version>"
+                      description='Version of the islet to pull. Can also be specified inline with "?v=" in the target string.'
+                    />
+                  </div>
+
+                  <SubHeading id="pull-targets" title="Pull Targets" />
+                  <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+                    The <InlineCode>{"<islet>"}</InlineCode> argument accepts three formats:
+                  </p>
+                  <div className="space-y-8">
+                    <div>
+                      <span className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-foreground">
+                        Short form
+                      </span>
+                      <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                        Just the islet name. Use your default device or <InlineCode>-d</InlineCode>{" "}
+                        / <InlineCode>--device</InlineCode> with a device name (your account) or{" "}
+                        <InlineCode>username/device</InlineCode> to target a specific account
+                        without using the full <InlineCode>username/device:islet</InlineCode> form.
+                      </p>
+                      <DocsCodeBlock>{`$ dot pull ~/.zshrc
+$ dot pull ./nvim/init.lua
+$ dot pull ~/.zshrc?v=rev2
+$ dot pull ~/.zshrc -d laptop
+$ dot pull ~/.zshrc -d alice/laptop`}</DocsCodeBlock>
+                    </div>
+
+                    <div>
+                      <span className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-foreground">
+                        Full form
+                      </span>
+                      <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                        Includes the username and device. No <InlineCode>--device</InlineCode> flag
+                        needed.
+                      </p>
+                      <DocsCodeBlock>{`$ dot pull alice/laptop:~/.zshrc
+$ dot pull alice/laptop:./nvim/init.lua?v=rev1`}</DocsCodeBlock>
+                    </div>
+
+                    <div>
+                      <span className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-foreground">
+                        Web URL
+                      </span>
+                      <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                        A full URL from the dotlet web interface. Cannot be combined with{" "}
+                        <InlineCode>--device</InlineCode>.
+                      </p>
+                      <DocsCodeBlock>{`$ dot pull "${APP_URL}/alice/laptop/islet?n=~/.zshrc"
+$ dot pull "${APP_URL}/alice/laptop/islet?n=./nvim/init.lua&v=rev1"`}</DocsCodeBlock>
+                    </div>
+                  </div>
+
+                  <SubHeading id="pull-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Pull and restore to original path
+$ dot pull ~/.zshrc
+
+# Pull and overwrite existing files
+$ dot pull ~/.zshrc --force
+
+# Pull to a custom directory
+$ dot pull ./nvim/init.lua -p ~/backup/init.lua
+
+# Pull a specific version
+$ dot pull ~/.zshrc -v rev3
+
+# Short form with explicit username/device (-d)
+$ dot pull ~/.zshrc -d alice/laptop
+
+# Pull from another user's public islet (full form)
+$ dot pull alice/laptop:~/.zshrc`}</DocsCodeBlock>
+                </section>
+
+                <section id="list" className="scroll-mt-24">
+                  <SectionHeading id="list-h" number="08" title="List" />
+                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    List all islets for the selected or specified device.{" "}
+                    <InlineCode>--device</InlineCode> accepts a device name on your account or{" "}
+                    <InlineCode>username/device</InlineCode> to list another user&apos;s device.
+                    Running <InlineCode>dot</InlineCode> with no subcommand is equivalent to{" "}
+                    <InlineCode>dot list</InlineCode>.
+                  </p>
+                  <DocsCodeBlock>{`$ dot list [options]
+$ dot              # same as dot list`}</DocsCodeBlock>
+
+                  <SubHeading id="list-options" title="Options" />
+                  <OptionRow
+                    flag="--device"
+                    alias="-d"
+                    value="<device | username/device>"
+                    description="Device to list islets for: your device name, or username/device for a specific account. Uses the configured default device when omitted."
+                  />
+
+                  <SubHeading id="list-example-output" title="Examples" />
+                  <DocsCodeBlock>{`$ dot list -d personal
+$ dot list -d alice/laptop`}</DocsCodeBlock>
+                  <div className="mt-4 space-y-4">
+                    <DocsCodeBlock label="output (your device)">{`✔ Found 3 islets
+personal
+
+  ‣ .zshrc
+  ‣ nvim/init.lua
+  ‣ .config/ghostty/config`}</DocsCodeBlock>
+                    <DocsCodeBlock label="output (username/device)">{`✔ Found 2 islets
+alice/laptop
+
+  ‣ .zshrc
+  ‣ nvim/init.lua`}</DocsCodeBlock>
+                  </div>
+                </section>
+
+                <section id="delete" className="scroll-mt-24">
+                  <SectionHeading id="delete-h" number="09" title="Delete" />
+                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    Permanently remove an islet from your device.
+                  </p>
+                  <DocsCodeBlock>{`$ dot delete <islet> [options]`}</DocsCodeBlock>
+
+                  <SubHeading id="delete-args" title="Arguments" />
+                  <OptionRow
+                    flag="<islet>"
+                    description="Islet to delete. Same target formats as pull (short form, full form, or web URL) without a version selector."
+                  />
+
+                  <SubHeading id="delete-options" title="Options" />
+                  <div>
+                    <OptionRow
+                      flag="--device"
+                      alias="-d"
+                      value="<device | username/device>"
+                      description="Same meaning as for pull when using short-form islet names. Only your own devices can be targeted for deletion."
+                    />
+                    <OptionRow flag="--yes" alias="-y" description="Skip the confirmation prompt" />
+                  </div>
+
+                  <SubHeading id="delete-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Delete on the default device (prompted)
+$ dot delete ~/.zshrc
+
+# Full form
+$ dot delete alice/laptop:~/.zshrc
+
+# Non-interactive / scripting
+$ dot delete ~/.zshrc --yes`}</DocsCodeBlock>
+                </section>
+
+                <section id="update" className="scroll-mt-24">
+                  <SectionHeading id="update-h" number="10" title="Update" />
+                  <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    Update islet name and visibility.
+                  </p>
+                  <DocsCodeBlock>{`$ dot update <islet> [options]`}</DocsCodeBlock>
+
+                  <SubHeading id="update-args" title="Arguments" />
+                  <OptionRow
+                    flag="<islet>"
+                    description="Islet to update. Same target formats as pull without a version selector."
+                  />
+
+                  <SubHeading id="update-options" title="Options" />
+                  <div>
+                    <OptionRow
+                      flag="--device"
+                      alias="-d"
+                      value="<device | username/device>"
+                      description="Same meaning as for pull when using short-form islet names."
+                    />
+                  </div>
+
+                  <SubHeading id="update-examples" title="Examples" />
+                  <DocsCodeBlock>{`# Update on the default device (prompted)
+$ dot update ~/.zshrc
+
+# Short form with explicit device
+$ dot update ~/.zshrc -d laptop
+
+# Full form
+$ dot update alice/laptop:~/.zshrc`}</DocsCodeBlock>
                 </section>
 
                 <section id="examples" className="scroll-mt-24">
