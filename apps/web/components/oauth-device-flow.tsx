@@ -103,12 +103,15 @@ export function OauthDeviceFlow({
     setStatus("approved");
   }
 
+  const otpSlotClassName =
+    "size-10 rounded-md border border-input bg-background text-base text-foreground first:rounded-md last:rounded-md dark:bg-input/30";
+
   return (
-    <div className="w-full max-w-md text-center text-zinc-100">
+    <div className="w-full max-w-md text-center text-foreground">
       <h1 className="text-[2.15rem] font-semibold tracking-tight">
         {status === "approved" ? "Authorization successful" : "Authorize Device"}
       </h1>
-      <p className="mt-2 text-sm text-zinc-400">
+      <p className="mt-2 text-sm text-muted-foreground">
         {status === "approved"
           ? "You can close this tab."
           : "Enter the code from your device to authenticate it to your account."}
@@ -124,70 +127,23 @@ export function OauthDeviceFlow({
           className="uppercase"
         >
           <InputOTPGroup className="gap-2 border-none bg-transparent">
-            <InputOTPSlot
-              index={0}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
-            <InputOTPSlot
-              index={1}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
-            <InputOTPSlot
-              index={2}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
-            <InputOTPSlot
-              index={3}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
+            <InputOTPSlot index={0} className={otpSlotClassName} />
+            <InputOTPSlot index={1} className={otpSlotClassName} />
+            <InputOTPSlot index={2} className={otpSlotClassName} />
+            <InputOTPSlot index={3} className={otpSlotClassName} />
           </InputOTPGroup>
-          <InputOTPSeparator className="mx-2 text-zinc-500 [&_svg]:size-3" />
+          <InputOTPSeparator className="mx-2 text-muted-foreground [&_svg]:size-3" />
           <InputOTPGroup className="gap-2 border-none bg-transparent">
-            <InputOTPSlot
-              index={4}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
-            <InputOTPSlot
-              index={5}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
-            <InputOTPSlot
-              index={6}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
-            <InputOTPSlot
-              index={7}
-              className="size-10 rounded-md border border-zinc-800 bg-zinc-950 text-base text-zinc-100"
-            />
+            <InputOTPSlot index={4} className={otpSlotClassName} />
+            <InputOTPSlot index={5} className={otpSlotClassName} />
+            <InputOTPSlot index={6} className={otpSlotClassName} />
+            <InputOTPSlot index={7} className={otpSlotClassName} />
           </InputOTPGroup>
         </InputOTP>
       </div>
 
-      {/* <div className="mx-auto mt-6 w-full rounded-lg border border-zinc-800 bg-zinc-950/90 px-4 py-4 text-left shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
-        <p className="truncate text-sm text-zinc-300">Dotlet CLI @ localhost</p>
-        <div className="mt-3 space-y-2 text-xs text-zinc-400">
-          <div className="flex items-center gap-2">
-            <Triangle className="size-3" />
-            <span>dotlet-cli v0.1.0 darwin (arm64)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="size-3" />
-            <span>unknown</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock3 className="size-3" />
-            <span>{timeLabel}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Monitor className="size-3" />
-            <span>local-session</span>
-          </div>
-        </div>
-      </div> */}
-
-      {/* {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null} */}
       <div className="mt-3 min-h-5">
-        <p className="text-center text-sm text-red-400">{error ? error : ""}</p>
+        <p className="text-center text-sm text-destructive">{error ? error : ""}</p>
       </div>
 
       {status !== "approved" ? (
@@ -195,7 +151,7 @@ export function OauthDeviceFlow({
           <Button
             onClick={onAllow}
             disabled={status !== "verified"}
-            className="h-10 rounded-md bg-zinc-100 px-6 text-sm font-medium text-zinc-900 hover:bg-zinc-200 w-full max-w-sm cursor-pointer"
+            className="h-10 w-full max-w-sm cursor-pointer px-6"
           >
             {status === "verifying"
               ? "Validating..."
@@ -206,7 +162,7 @@ export function OauthDeviceFlow({
         </div>
       ) : null}
 
-      <div className="mt-20 flex justify-center gap-4 text-xs text-zinc-500">
+      <div className="mt-20 flex justify-center gap-4 text-xs text-muted-foreground">
         <span>Terms</span>
         <span>Privacy Policy</span>
       </div>

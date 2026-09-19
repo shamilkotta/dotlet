@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 
 import { OauthDeviceFlow } from "@/components/oauth-device-flow";
 import { auth } from "@/lib/auth";
@@ -32,12 +31,12 @@ export default async function OAuthDevicePage({
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  if (!session) {
-    const resumePath = userCode
-      ? `/oauth/device?user_code=${encodeURIComponent(userCode)}`
-      : "/oauth/device";
-    redirect(`/login?redirect=${encodeURIComponent(resumePath)}`);
-  }
+  // if (!session) {
+  //   const resumePath = userCode
+  //     ? `/oauth/device?user_code=${encodeURIComponent(userCode)}`
+  //     : "/oauth/device";
+  //   redirect(`/login?redirect=${encodeURIComponent(resumePath)}`);
+  // }
 
   let verified = false;
   let verificationError = "";
@@ -60,13 +59,13 @@ export default async function OAuthDevicePage({
   }
 
   return (
-    <>
-      <header className="sticky top-0 z-50 mx-auto flex h-14 w-full max-w-[1600px] items-center justify-end bg-white px-4  dark:bg-[#0a0a0a] md:px-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 mx-auto flex h-14 w-full max-w-[1600px] items-center justify-end bg-background px-4 md:px-8">
         <AuthHeader session={session} />
       </header>
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black p-6">
+      <main className="relative flex min-h-[calc(100vh-3.5rem)] items-center justify-center overflow-hidden p-6">
         <OauthDeviceFlow initialUserCode={userCode} verified={verified} error={verificationError} />
       </main>
-    </>
+    </div>
   );
 }
