@@ -1,31 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# dotlet web
 
-## Getting Started
+The dotlet web app and API, built with Next.js. It handles accounts, devices, islets, public profiles, and the documentation site, and serves the API used by the CLI.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router) and React 19
+- Better Auth with email/password and GitHub OAuth
+- Drizzle ORM on PostgreSQL
+- S3 or Cloudflare R2 for islet file storage
+- Cloudflare Email for transactional email
+- UI components from `@workspace/ui` (shadcn/ui)
+
+## Setup
+
+Copy the example environment file and fill in the values:
 
 ```bash
-pnpm dev
-
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable                                                                 | Description                                                |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `DATABASE_URL`                                                           | PostgreSQL connection string                               |
+| `BETTER_AUTH_SECRET`                                                     | Auth secret, at least 32 chars (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL`                                 | Public URL of the app, e.g. `http://localhost:3000`        |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`                               | GitHub OAuth app credentials                               |
+| `CF_EMAIL_API_TOKEN`, `EMAIL_FROM`, `EMAIL_FROM_NAME`                    | Email sending configuration                                |
+| `STORAGE_PROVIDER`                                                       | `s3` or `r2`                                               |
+| `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`     | S3 settings (when `STORAGE_PROVIDER=s3`)                   |
+| `CF_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 settings (when `STORAGE_PROVIDER=r2`)                   |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Apply database migrations, then start the dev server:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm db:migrate
+pnpm dev
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000).
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command            | Description                                 |
+| ------------------ | ------------------------------------------- |
+| `pnpm dev`         | Start the development server                |
+| `pnpm build`       | Build for production                        |
+| `pnpm start`       | Start the production server                 |
+| `pnpm db:generate` | Generate migrations from the Drizzle schema |
+| `pnpm db:migrate`  | Apply migrations to the database            |
+| `pnpm typecheck`   | Type check                                  |
+| `pnpm lint`        | Lint with oxlint                            |
+| `pnpm format`      | Format with oxfmt                           |
+| `pnpm test`        | Run tests with Vitest                       |
