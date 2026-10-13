@@ -229,11 +229,11 @@ Commands:
                     and pull.
                   </p>
                   <DocsCodeBlock label="output">{`dotlet login
-┌─────────────────────────────────────────────┐
-│ URL      https://dotlet.app/oauth/device    │
-│ Code     ABCD-1234                          │
-│ Expires  about 15m 0s                       │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│ URL      https://dotlet.vercel.app/oauth/device  │
+│ Code     ABCD-1234                               │
+│ Expires  about 15m 0s                            │
+└──────────────────────────────────────────────────┘
 ✔ Browser opened (0.3s)
 ⠋ Waiting for authorization...
 ✔ Login successful. CLI is now authorized.`}</DocsCodeBlock>

@@ -2,7 +2,7 @@
 
 Make your environment portable.
 
-Full documentation: [https://dotlet.app/docs](https://dotlet.app/docs)
+Full documentation: [https://dotlet.vercel.app/docs](https://dotlet.vercel.app/docs)
 
 ## Installation
 
@@ -59,5 +59,5 @@ Commands:
 
 ## Help
 
-- Web docs: [https://dotlet.app/docs](https://dotlet.app/docs)
-- App: [https://dotlet.app](https://dotlet.app)
+- Web docs: [https://dotlet.vercel.app/docs](https://dotlet.vercel.app/docs)
+- App: [https://dotlet.vercel.app](https://dotlet.vercel.app)

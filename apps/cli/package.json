@@ -1,43 +1,40 @@
 {
   "name": "dotlet",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "CLI for syncing and versioning dotfiles with devices",
   "keywords": [
-    "dotfiles",
     "cli",
-    "sync",
     "config",
-    "developer-tools"
+    "developer-tools",
+    "dotfiles",
+    "sync"
   ],
-  "homepage": "https://dotlet.app",
+  "homepage": "https://dotlet.vercel.app",
+  "bugs": {
+    "url": "https://github.com/shamilkotta/dotlet/issues"
+  },
+  "license": "UNLICENSED",
+  "author": "Shamil",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shamilkotta/dotlet.git",
     "directory": "apps/cli"
   },
-  "bugs": {
-    "url": "https://github.com/shamilkotta/dotlet/issues"
+  "bin": {
+    "dot": "./dist/index.js",
+    "dotlet": "./dist/index.js"
   },
-  "author": "Shamil",
-  "license": "UNLICENSED",
-  "type": "module",
   "files": [
     "dist",
     "README.md"
   ],
+  "type": "module",
+  "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js"
   },
-  "main": "./dist/index.js",
-  "bin": {
-    "dotlet": "./dist/index.js",
-    "dot": "./dist/index.js"
-  },
-  "engines": {
-    "node": ">=20"
-  },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --out-dir dist --clean --env.DOTLET_BASE_URL https://dotlet.app",
+    "build": "tsup src/index.ts --format esm --out-dir dist --clean --env.DOTLET_BASE_URL https://dotlet.vercel.app",
     "dev": "tsup src/index.ts --format esm --dts --out-dir dist --clean --watch --env.DOTLET_BASE_URL http://localhost:3000",
     "lint": "oxlint src",
     "format": "oxfmt --write src",
@@ -64,5 +61,8 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
