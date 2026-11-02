@@ -55,10 +55,16 @@ function compareNodes(a: TreeNode, b: TreeNode) {
   return a.name.localeCompare(b.name);
 }
 
-function freeze(folder: MutableFolder): FolderNode {
-  const children: TreeNode[] = [...[...folder.folders.values()].map(freeze), ...folder.files].sort(
-    compareNodes,
-  );
+function freezeChildren(folder: MutableFolder): TreeNode[] {
+  return [...[...folder.folders.values()].map(freeze), ...folder.files].sort(compareNodes);
+}
+
+function freeze(folder: MutableFolder): TreeNode {
+  const children = freezeChildren(folder);
+  const [onlyChild] = children;
+  if (children.length === 1 && onlyChild?.kind === "file") {
+    return { ...onlyChild, name: `${folder.name}/${onlyChild.name}` };
+  }
   return {
     kind: "folder",
     name: folder.name,
@@ -86,8 +92,7 @@ function buildTree(records: IsletRecord[]): TreeNode[] {
     current.files.push({ kind: "file", name: fileName, updatedAt: record.updatedAt, record });
   }
 
-  if (root.folders.size === 0 && root.files.length === 0) return [];
-  return freeze(root).children;
+  return freezeChildren(root);
 }
 
 function flattenRecords(records: IsletRecord[]): FileNode[] {
