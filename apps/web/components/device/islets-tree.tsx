@@ -223,15 +223,6 @@ export function IsletsTree({
     <div className="space-y-0">
       {allKeys.length > 0 && (
         <div className="flex justify-end gap-1 pb-2">
-          <Button
-            variant={flat ? "secondary" : "ghost"}
-            size="sm"
-            aria-pressed={flat}
-            onClick={() => setFlat((value) => !value)}
-          >
-            <List />
-            Flat list
-          </Button>
           {!flat && (
             <Button
               variant="ghost"
@@ -242,6 +233,15 @@ export function IsletsTree({
               {allOpen ? "Collapse all" : "Expand all"}
             </Button>
           )}
+          <Button
+            variant={flat ? "secondary" : "ghost"}
+            size="sm"
+            aria-pressed={flat}
+            onClick={() => setFlat((value) => !value)}
+          >
+            <List />
+            Flat list
+          </Button>
         </div>
       )}
       <div className="border-b border-foreground/5">
