@@ -8,6 +8,7 @@ import { formatRelativeTimeVerbose } from "@/lib/format-relative-time";
 import { CopyIsletNameButton } from "@/components/copy-islet-name-button";
 import { Button } from "@workspace/ui/components/button";
 import { buildIsletViewHref } from "@/lib/core/islet-link";
+import { setIsletsFlatView } from "@/lib/actions/user-preferences";
 import { pathSegments, stripLeadingSlashes } from "@/lib/core/path";
 import type { IsletRecord } from "@/components/device/islets";
 
@@ -188,12 +189,21 @@ export function IsletsTree({
   records,
   username,
   deviceName,
+  initialFlat,
+  persistPreference,
 }: {
   records: IsletRecord[];
   username: string;
   deviceName: string;
+  initialFlat: boolean;
+  persistPreference: boolean;
 }) {
-  const [flat, setFlat] = React.useState(false);
+  const [flat, setFlat] = React.useState(initialFlat);
+  const toggleFlat = () => {
+    const next = !flat;
+    setFlat(next);
+    if (persistPreference) void setIsletsFlatView(next);
+  };
   const fullTree = React.useMemo(() => buildTree(records), [records]);
   const flatList = React.useMemo(() => flattenRecords(records), [records]);
   const allKeys = React.useMemo(() => collectFolderKeys(fullTree), [fullTree]);
@@ -237,7 +247,7 @@ export function IsletsTree({
             variant={flat ? "secondary" : "ghost"}
             size="sm"
             aria-pressed={flat}
-            onClick={() => setFlat((value) => !value)}
+            onClick={toggleFlat}
           >
             <List />
             Flat list

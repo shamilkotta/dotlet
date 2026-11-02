@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { AuthHeader } from "@/components/auth-header";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
-import { devices, user } from "@/lib/db/schema";
+import { devices, isletRevisions, islets, user, userPreferences } from "@/lib/db/schema";
 import { createDeviceMetadata } from "@/lib/page-metadata";
 import { IsletsList, IsletsListSkeleton, type IsletRecord } from "@/components/device/islets";
 import {
@@ -18,7 +18,6 @@ import {
 } from "@/components/device/info";
 import Link from "next/link";
 import { Lock } from "lucide-react";
-import { isletRevisions, islets } from "@/lib/db/schema";
 
 export async function generateMetadata({
   params,
@@ -122,6 +121,14 @@ export default async function DevicePage({
     notFound();
   }
   const { commitCount, fileCount, lastActivity, records, target } = data;
+  const viewerId = session?.user.id;
+  const [preferences] = viewerId
+    ? await db
+        .select({ isletsFlatView: userPreferences.isletsFlatView })
+        .from(userPreferences)
+        .where(eq(userPreferences.userId, viewerId))
+        .limit(1)
+    : [];
 
   return (
     <>
@@ -173,7 +180,12 @@ export default async function DevicePage({
           </Suspense>
         </div>
         <Suspense fallback={<IsletsListSkeleton />}>
-          <IsletsList records={records} target={target} />
+          <IsletsList
+            records={records}
+            target={target}
+            initialFlat={preferences?.isletsFlatView ?? false}
+            persistPreference={Boolean(viewerId)}
+          />
         </Suspense>
       </main>
     </>

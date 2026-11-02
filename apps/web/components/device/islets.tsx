@@ -13,6 +13,8 @@ export type IsletRecord = {
 export function IsletsList({
   target,
   records,
+  initialFlat,
+  persistPreference,
 }: {
   target: {
     userId: string;
@@ -22,9 +24,17 @@ export function IsletsList({
     deviceName: string;
   };
   records: IsletRecord[];
+  initialFlat: boolean;
+  persistPreference: boolean;
 }) {
   return (
-    <IsletsTree records={records} username={target.username ?? ""} deviceName={target.deviceName} />
+    <IsletsTree
+      records={records}
+      username={target.username ?? ""}
+      deviceName={target.deviceName}
+      initialFlat={initialFlat}
+      persistPreference={persistPreference}
+    />
   );
 }
 
