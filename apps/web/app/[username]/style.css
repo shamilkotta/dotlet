@@ -33,7 +33,7 @@
   display: none;
 }
 
-[data-device-islets] details[open] .folder-icon {
+[data-device-islets] details[open] > summary .folder-icon {
   transform: rotate(90deg);
 }
 

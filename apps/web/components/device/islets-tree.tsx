@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronRight, ChevronsDownUp, ChevronsUpDown, FolderTree, Lock } from "lucide-react";
+import { ChevronRight, ChevronsDownUp, ChevronsUpDown, List, Lock } from "lucide-react";
 import Link from "next/link";
 
 import { formatRelativeTimeVerbose } from "@/lib/format-relative-time";
@@ -15,7 +15,6 @@ type FolderNode = {
   kind: "folder";
   name: string;
   key: string;
-  chainKeys: string[];
   updatedAt: Date;
   children: TreeNode[];
 };
@@ -63,7 +62,6 @@ function freeze(folder: MutableFolder): FolderNode {
     kind: "folder",
     name: folder.name,
     key: folder.key,
-    chainKeys: [folder.key],
     updatedAt: children[0]!.updatedAt,
     children,
   };
@@ -91,22 +89,17 @@ function buildTree(records: IsletRecord[]): TreeNode[] {
   return freeze(root).children;
 }
 
-function compactFolder(folder: FolderNode): FolderNode {
-  let current = folder;
-  let name = folder.name;
-  const chainKeys = [folder.key];
-  let only = current.children.length === 1 ? current.children[0] : undefined;
-  while (only?.kind === "folder") {
-    current = only;
-    only = current.children.length === 1 ? current.children[0] : undefined;
-    name = `${name}/${current.name}`;
-    chainKeys.push(current.key);
-  }
-  return { ...current, name, chainKeys, children: current.children.map(compactNode) };
-}
-
-function compactNode(node: TreeNode): TreeNode {
-  return node.kind === "folder" ? compactFolder(node) : node;
+function flattenRecords(records: IsletRecord[]): FileNode[] {
+  return records
+    .map(
+      (record): FileNode => ({
+        kind: "file",
+        name: stripLeadingSlashes(record.path),
+        updatedAt: record.updatedAt,
+        record,
+      }),
+    )
+    .sort(compareNodes);
 }
 
 function collectFolderKeys(nodes: TreeNode[], keys: string[] = []): string[] {
@@ -120,7 +113,7 @@ function collectFolderKeys(nodes: TreeNode[], keys: string[] = []): string[] {
 
 type TreeContext = {
   openKeys: ReadonlySet<string>;
-  setFoldersOpen: (keys: string[], open: boolean) => void;
+  setFolderOpen: (key: string, open: boolean) => void;
   makeIsletHref: (isletPath: string) => string;
   getIsletName: (isletPath: string) => string;
 };
@@ -163,7 +156,7 @@ function FolderRow({ node, context }: { node: FolderNode; context: TreeContext }
       open={context.openKeys.has(node.key)}
       onToggle={(event) => {
         if (event.target !== event.currentTarget) return;
-        context.setFoldersOpen(node.chainKeys, event.currentTarget.open);
+        context.setFolderOpen(node.key, event.currentTarget.open);
       }}
     >
       <summary className="flex cursor-pointer items-center gap-3 hover:text-neutral-500 transition-colors">
@@ -200,31 +193,25 @@ export function IsletsTree({
   username: string;
   deviceName: string;
 }) {
-  const [compact, setCompact] = React.useState(false);
+  const [flat, setFlat] = React.useState(false);
   const fullTree = React.useMemo(() => buildTree(records), [records]);
-  const tree = React.useMemo(
-    () => (compact ? fullTree.map(compactNode) : fullTree),
-    [compact, fullTree],
-  );
+  const flatList = React.useMemo(() => flattenRecords(records), [records]);
   const allKeys = React.useMemo(() => collectFolderKeys(fullTree), [fullTree]);
   const [openKeys, setOpenKeys] = React.useState<ReadonlySet<string>>(() => {
     const firstFolder = fullTree.find((node) => node.kind === "folder");
     return new Set(firstFolder ? [firstFolder.key] : []);
   });
 
-  const visibleKeys = React.useMemo(() => collectFolderKeys(tree), [tree]);
-  const allOpen = visibleKeys.length > 0 && visibleKeys.every((key) => openKeys.has(key));
+  const allOpen = allKeys.every((key) => openKeys.has(key));
 
   const context: TreeContext = {
     openKeys,
-    setFoldersOpen: (keys, open) =>
+    setFolderOpen: (key, open) =>
       setOpenKeys((prev) => {
-        if (keys.every((key) => prev.has(key) === open)) return prev;
+        if (prev.has(key) === open) return prev;
         const next = new Set(prev);
-        for (const key of keys) {
-          if (open) next.add(key);
-          else next.delete(key);
-        }
+        if (open) next.add(key);
+        else next.delete(key);
         return next;
       }),
     makeIsletHref: (isletPath) => buildIsletViewHref({ username, deviceName, isletPath }),
@@ -237,26 +224,28 @@ export function IsletsTree({
       {allKeys.length > 0 && (
         <div className="flex justify-end gap-1 pb-2">
           <Button
-            variant={compact ? "secondary" : "ghost"}
+            variant={flat ? "secondary" : "ghost"}
             size="sm"
-            aria-pressed={compact}
-            onClick={() => setCompact((value) => !value)}
+            aria-pressed={flat}
+            onClick={() => setFlat((value) => !value)}
           >
-            <FolderTree />
-            Compact folders
+            <List />
+            Flat list
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpenKeys(new Set(allOpen ? [] : allKeys))}
-          >
-            {allOpen ? <ChevronsDownUp /> : <ChevronsUpDown />}
-            {allOpen ? "Collapse all" : "Expand all"}
-          </Button>
+          {!flat && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpenKeys(new Set(allOpen ? [] : allKeys))}
+            >
+              {allOpen ? <ChevronsDownUp /> : <ChevronsUpDown />}
+              {allOpen ? "Collapse all" : "Expand all"}
+            </Button>
+          )}
         </div>
       )}
       <div className="border-b border-foreground/5">
-        <TreeLevel nodes={tree} context={context} />
+        <TreeLevel nodes={flat ? flatList : fullTree} context={context} />
       </div>
     </div>
   );
