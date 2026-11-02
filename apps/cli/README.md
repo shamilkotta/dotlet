@@ -46,7 +46,7 @@ Commands:
   pull <islet>               Pull an islet
   list                       List islets for the selected or specified device
   update <islet>             Update islet name and visibility
-  delete <islet>             Delete an islet
+  delete <islet>             Delete an islet or folder
   device                     Manage devices
     device list              List all the devices
     device create <name>     Register a new device

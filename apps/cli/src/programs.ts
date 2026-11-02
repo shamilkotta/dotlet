@@ -759,11 +759,21 @@ export function runDeleteIslet(options: { name: string; device?: string; yes?: b
           }),
         );
       }
+      const matchedPaths = yield* api.deleteIslet(
+        { device: target.device, path: target.islet, dryRun: true },
+        accessToken,
+      );
+      const isFolder = matchedPaths.length > 1 || matchedPaths[0] !== target.islet;
+      if (isFolder) {
+        for (const path of matchedPaths) {
+          yield* terminal.muted(`  ${figures.pointer} ${path}`);
+        }
+      }
       const confirmed = yield* terminal.confirmDanger({
-        title: "Delete islet",
+        title: isFolder ? `Delete ${matchedPaths.length} islets` : "Delete islet",
         target: displayTarget,
         description:
-          "All revisions, history, and files for this islet will be permanently removed from Dotlet.",
+          "All revisions, history, and files for the matched islets will be permanently removed from Dotlet.",
       });
       if (!confirmed) {
         yield* terminal.muted(`${figures.cross} Cancelled.`);
@@ -771,11 +781,16 @@ export function runDeleteIslet(options: { name: string; device?: string; yes?: b
       }
     }
 
-    yield* terminal.startSpinner("Deleting islet...");
-    yield* api
-      .deleteIslet(target.device, target.islet, accessToken)
+    yield* terminal.startSpinner("Deleting...");
+    const deletedPaths = yield* api
+      .deleteIslet({ device: target.device, path: target.islet, dryRun: false }, accessToken)
       .pipe(Effect.tapError(() => Effect.ignore(terminal.stopSpinner)));
-    yield* terminal.succeedSpinner(`Deleted islet: ${displayTarget}`);
+    yield* terminal.succeedSpinner(
+      `Deleted ${deletedPaths.length} islet${deletedPaths.length === 1 ? "" : "s"} from ${target.device}`,
+    );
+    for (const path of deletedPaths) {
+      yield* terminal.muted(`  ${figures.pointer} ${path}`);
+    }
   });
 }
 

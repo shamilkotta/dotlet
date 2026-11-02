@@ -84,6 +84,10 @@ const DeleteOkSchema = Schema.Struct({
   ok: Schema.Literal(true),
 });
 
+const DeleteIsletsResponseSchema = Schema.Struct({
+  paths: Schema.Array(Schema.String),
+});
+
 const ListIsletsResponseSchema = Schema.Struct({
   device: Schema.String,
   islets: Schema.Array(
@@ -170,10 +174,9 @@ export interface DotletApi {
   ) => Effect.Effect<Schema.Schema.Type<typeof UpdateDeviceResponseSchema>, CliApiError>;
   readonly deleteDevice: (name: string, accessToken: string) => Effect.Effect<void, CliApiError>;
   readonly deleteIslet: (
-    device: string,
-    path: string,
+    query: { readonly device: string; readonly path: string; readonly dryRun: boolean },
     accessToken: string,
-  ) => Effect.Effect<void, CliApiError>;
+  ) => Effect.Effect<readonly string[], CliApiError>;
   readonly updateIslet: (
     query: { readonly device: string; readonly name: string },
     body: { readonly name?: string; readonly visibility?: "public" | "private" },
@@ -431,13 +434,13 @@ export const DotletApiLive = Layer.effect(
           DeleteOkSchema,
           accessToken,
         ).pipe(Effect.map(() => undefined)),
-      deleteIslet: (device, path, accessToken) =>
+      deleteIslet: ({ device, path, dryRun }, accessToken) =>
         requestJson(
-          `/api/islets?d=${encodeURIComponent(device)}&n=${encodeURIComponent(path)}`,
+          `/api/islets?d=${encodeURIComponent(device)}&n=${encodeURIComponent(path)}${dryRun ? "&dryRun=1" : ""}`,
           { method: "DELETE" },
-          DeleteOkSchema,
+          DeleteIsletsResponseSchema,
           accessToken,
-        ).pipe(Effect.map(() => undefined)),
+        ).pipe(Effect.map((response) => response.paths)),
       updateIslet: (query, body, accessToken) =>
         requestJson(
           `/api/islets?d=${encodeURIComponent(query.device)}&n=${encodeURIComponent(query.name)}`,

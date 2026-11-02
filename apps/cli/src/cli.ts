@@ -136,7 +136,7 @@ const listCommand = Command.make(
 const deleteCommand = Command.make(
   "delete",
   {
-    name: Args.text({ name: "islet" }).pipe(Args.withDescription("Islet to delete")),
+    name: Args.text({ name: "islet" }).pipe(Args.withDescription("Islet or folder to delete")),
     device: deviceOption,
     yes: yesOption,
   },
@@ -146,7 +146,7 @@ const deleteCommand = Command.make(
       device: Option.getOrUndefined(device),
       yes,
     }),
-).pipe(Command.withDescription("Delete an islet"));
+).pipe(Command.withDescription("Delete an islet, or every islet under a folder"));
 
 const updateCommand = Command.make(
   "update",

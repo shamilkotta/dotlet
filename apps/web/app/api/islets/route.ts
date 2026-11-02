@@ -214,6 +214,7 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const requestedDeviceName = searchParams.get("d");
     const isletName = searchParams.get("n")?.trim() ?? "";
+    const dryRun = searchParams.get("dryRun") === "1";
     if (!isletName) {
       return badRequest("Islet is required");
     }
@@ -248,16 +249,32 @@ export async function DELETE(request: Request) {
       return badRequest("Islet not found", 404);
     }
 
-    const removed = await db
-      .delete(islets)
+    const folderPrefix = isletName.replace(/\/+$/, "") + "/";
+    const [exactMatch] = await db
+      .select({ id: islets.id })
+      .from(islets)
       .where(and(eq(islets.deviceId, device.id), eq(islets.path, isletName)))
-      .returning({ id: islets.id });
+      .limit(1);
+    const matchFilter = and(
+      eq(islets.deviceId, device.id),
+      exactMatch
+        ? eq(islets.path, isletName)
+        : sql`left(${islets.path}, ${folderPrefix.length}) = ${folderPrefix}`,
+    );
 
-    if (removed.length === 0) {
+    const matched = dryRun
+      ? await db
+          .select({ path: islets.path })
+          .from(islets)
+          .where(matchFilter)
+          .orderBy(asc(islets.path))
+      : await db.delete(islets).where(matchFilter).returning({ path: islets.path });
+
+    if (matched.length === 0) {
       return badRequest("Islet not found", 404);
     }
 
-    return ok({ ok: true as const });
+    return ok({ paths: matched.map((row) => row.path).sort() });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid request";
     return badRequest(message);
