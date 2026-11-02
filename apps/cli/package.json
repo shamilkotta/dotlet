@@ -1,6 +1,6 @@
 {
   "name": "dotlet",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "CLI for syncing and versioning dotfiles with devices",
   "keywords": [
     "cli",
